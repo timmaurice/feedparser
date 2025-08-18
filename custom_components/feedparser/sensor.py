@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
     from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
-__version__ = "0.1.11"
+__version__ = "0.1.12"
 
 COMPONENT_REPO = "https://github.com/custom-components/feedparser/"
 
