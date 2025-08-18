@@ -253,13 +253,27 @@ class FeedParserSensor(SensorEntity):
         return parsed_time
 
     def _process_image(self: FeedParserSensor, feed_entry: FeedParserDict) -> str:
+        if feed_entry.get("media_content"):
+            images = [
+                item.get("url")
+                for item in feed_entry["media_content"]
+                if item.get("url")
+                and (
+                    item.get("medium") == "image"
+                    or (item.get("type") or "").startswith("image/")
+                )
+            ]
+            if images:
+                return images[0]
         if feed_entry.get("enclosures"):
             images = [
-                enc for enc in feed_entry["enclosures"] if enc.type.startswith("image/")
+                enc.get("href")
+                for enc in feed_entry["enclosures"]
+                if enc.get("href") and (enc.get("type") or "").startswith("image/")
             ]
             if images:
                 # pick the first image found
-                return images[0]["href"]
+                return images[0]
         elif "summary" in feed_entry:
             images = re.findall(
                 IMAGE_REGEX,
