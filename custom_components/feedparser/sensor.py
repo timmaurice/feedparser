@@ -265,6 +265,14 @@ class FeedParserSensor(SensorEntity):
             ]
             if images:
                 return images[0]
+        if feed_entry.get("media_thumbnail"):
+            images = [
+                item.get("url")
+                for item in feed_entry["media_thumbnail"]
+                if item.get("url")
+            ]
+            if images:
+                return images[0]
         if feed_entry.get("enclosures"):
             images = [
                 enc.get("href")

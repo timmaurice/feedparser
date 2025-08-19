@@ -4,6 +4,7 @@ import re
 from contextlib import nullcontext, suppress
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
+from pathlib import Path
 
 import feedparser
 import pytest
@@ -223,3 +224,30 @@ def test_image_not_in_entries(feed: FeedSource) -> None:
     assert feed_sensor.feed_entries
     # assert that the sensor does not include the image in its feed entries
     assert all("image" not in e for e in feed_sensor.feed_entries)
+
+
+def test_media_thumbnail_support() -> None:
+    """Test that media:thumbnail is correctly parsed."""
+    feed_path = Path(__file__).parent / "data/bbc_europe.xml"
+    feed_sensor = FeedParserSensor(
+        feed=feed_path.absolute().as_uri(),
+        name="bbc_europe",
+        date_format=DATE_FORMAT,
+        local_time=False,
+        show_topn=9999,
+        remove_summary_image=False,
+        inclusions=["image", "title", "link", "published"],
+        exclusions=[],
+        scan_interval=DEFAULT_SCAN_INTERVAL,
+    )
+    feed_sensor.update()
+    assert feed_sensor.feed_entries
+
+    # Check if all entries have an image that is not the default one.
+    assert all(e["image"] != DEFAULT_THUMBNAIL for e in feed_sensor.feed_entries)
+
+    # Check the first image url
+    assert (
+        feed_sensor.feed_entries[0]["image"]
+        == "https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/5D87/production/_132734932_gettyimages-2028397377.jpg"
+    )
