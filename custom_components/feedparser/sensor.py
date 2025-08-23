@@ -139,7 +139,7 @@ class FeedParserSensor(SensorEntity):
         s.headers.update({"User-Agent": USER_AGENT})
         res: requests.Response = s.get(self._feed)
         res.raise_for_status()
-        parsed_feed: FeedParserDict = feedparser.parse(res.text)
+        parsed_feed: FeedParserDict = feedparser.parse(res.content)
 
         self._channel.clear()
         self._entries.clear()
@@ -261,28 +261,36 @@ class FeedParserSensor(SensorEntity):
     def _parse_date(self: FeedParserSensor, date: str) -> datetime:
         try:
             parsed_time: datetime = email.utils.parsedate_to_datetime(date)
-        except ValueError:
-            _LOGGER.warning(
+        except (ValueError, TypeError):
+            _LOGGER.debug(
                 (
-                    "Feed %s: Unable to parse RFC-822 date from %s. "
-                    "This could be caused by incorrect pubDate format "
-                    "in the RSS feed or due to a leapp second"
+                    "Feed %s: Unable to parse RFC-822 date from '%s'. This could be "
+                    "caused by an incorrect pubDate format in the RSS feed. "
+                    "Trying to use dateutil."
                 ),
                 self.name,
                 date,
             )
-            # best effort to parse the date using dateutil
-            parsed_time = parser.parse(date)
+            try:
+                # best effort to parse the date using dateutil
+                parsed_time = parser.parse(date)
+            except (parser.ParserError, TypeError) as e:
+                _LOGGER.warning(
+                    "Feed %s: Unable to parse date '%s' with dateutil: %s. "
+                    "Using current time as fallback.",
+                    self.name,
+                    date,
+                    e,
+                )
+                parsed_time = dt.utcnow()
 
         if not parsed_time.tzinfo:
-            # best effort to parse the date using dateutil
-            parsed_time = parser.parse(date)
-            if not parsed_time.tzinfo:
-                msg = (
-                    f"Feed {self.name}: Unable to parse date {date}, "
-                    "caused by an incorrect date format"
-                )
-                raise ValueError(msg)
+            _LOGGER.debug(
+                "Feed %s: No timezone info found in date '%s'. Assuming UTC.",
+                self.name,
+                date,
+            )
+            parsed_time = parsed_time.replace(tzinfo=timezone.utc)
         if not parsed_time.tzname():
             # replace tzinfo with UTC offset if tzinfo does not contain a TZ name
             parsed_time = parsed_time.replace(
