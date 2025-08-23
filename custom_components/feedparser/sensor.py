@@ -5,7 +5,7 @@ import email.utils
 import logging
 import re
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import feedparser  # type: ignore[import]
 import homeassistant.helpers.config_validation as cv
@@ -39,7 +39,6 @@ CONF_REMOVE_SUMMARY_IMG = "remove_summary_image"
 
 DEFAULT_DATE_FORMAT = "%a, %b %d %I:%M %p"
 DEFAULT_SCAN_INTERVAL = timedelta(hours=1)
-DEFAULT_THUMBNAIL = "https://www.home-assistant.io/images/favicon-192x192-full.png"
 DEFAULT_TOPN = 9999
 USER_AGENT = f"Home Assistant Feed-parser Integration {__version__}"
 IMAGE_REGEX = r"<img.+?src=\"(.+?)\".+?>"
@@ -116,8 +115,8 @@ class FeedParserSensor(SensorEntity):
         self._exclusions = exclusions
         self._scan_interval = scan_interval
         self._local_time = local_time
+        self._channel: dict[str, str] = {}
         self._entries: list[dict[str, str]] = []
-        self._attr_extra_state_attributes = {"entries": self._entries}
         self._attr_attribution = "Data retrieved using RSS feedparser"
         _LOGGER.debug("Feed %s: FeedParserSensor initialized - %s", self.name, self)
 
@@ -142,9 +141,19 @@ class FeedParserSensor(SensorEntity):
         res.raise_for_status()
         parsed_feed: FeedParserDict = feedparser.parse(res.text)
 
-        if not parsed_feed.entries:
+        self._channel.clear()
+        self._entries.clear()
+
+        if not parsed_feed.feed:
             self._attr_native_value = None
             _LOGGER.warning("Feed %s: No data received.", self.name)
+            return
+
+        self._channel.update(self._generate_channel_info(parsed_feed.feed))
+
+        if not parsed_feed.entries:
+            self._attr_native_value = 0
+            _LOGGER.warning("Feed %s: No entries found.", self.name)
             return
 
         _LOGGER.debug("Feed %s: Feed data fetched successfully", self.name)
@@ -159,7 +168,6 @@ class FeedParserSensor(SensorEntity):
             self.name,
             self.native_value,
         )
-        self._entries.clear()  # clear the entries to avoid duplicates
         self._entries.extend(self._generate_entries(parsed_feed))
         _LOGGER.debug(
             "Feed %s: Sensor state updated - %s entries",
@@ -199,8 +207,10 @@ class FeedParserSensor(SensorEntity):
             else:
                 sensor_entry[key] = value
 
-        if "image" in self._inclusions and "image" not in sensor_entry:
-            sensor_entry["image"] = self._process_image(feed_entry)
+        if "image" in self._inclusions and "image" not in sensor_entry and (
+            image := self._process_image(feed_entry)
+        ):
+            sensor_entry["image"] = image
         if (
             "link" in self._inclusions
             and "link" not in sensor_entry
@@ -215,6 +225,38 @@ class FeedParserSensor(SensorEntity):
             )
         _LOGGER.debug("Feed %s: Generated sensor entry: %s", self.name, sensor_entry)
         return sensor_entry
+
+    def _generate_channel_info(
+        self: FeedParserSensor,
+        feed_info: FeedParserDict,
+    ) -> dict[str, str]:
+        _LOGGER.debug("Feed %s: Generating channel info for %s", self.name, feed_info)
+        channel_info = {}
+        for key, value in feed_info.items():
+            if (
+                (self._inclusions and key not in self._inclusions)
+                or ("parsed" in key)
+                or (key in self._exclusions)
+                or (key == "image")
+            ):
+                continue
+            if key in ["published", "updated", "created", "expired"]:
+                parsed_date: datetime = self._parse_date(value)
+                channel_info[key] = parsed_date.strftime(self._date_format)
+            else:
+                channel_info[key] = value
+
+        if "image" in self._inclusions:
+            image_url = feed_info.get("image", {}).get("href") or feed_info.get(
+                "image",
+                {},
+            ).get("url")
+            if not image_url and feed_info.get("logo"):
+                image_url = feed_info.logo
+            if image_url:
+                channel_info["image"] = image_url
+        _LOGGER.debug("Feed %s: Generated channel info: %s", self.name, channel_info)
+        return channel_info
 
     def _parse_date(self: FeedParserSensor, date: str) -> datetime:
         try:
@@ -252,7 +294,9 @@ class FeedParserSensor(SensorEntity):
         _LOGGER.debug("Feed %s: Parsed date: %s", self.name, parsed_time)
         return parsed_time
 
-    def _process_image(self: FeedParserSensor, feed_entry: FeedParserDict) -> str:
+    def _process_image(
+        self: FeedParserSensor, feed_entry: FeedParserDict
+    ) -> str | None:
         if feed_entry.get("media_content"):
             images = [
                 item.get("url")
@@ -274,13 +318,12 @@ class FeedParserSensor(SensorEntity):
             if images:
                 return images[0]
         if feed_entry.get("enclosures"):
-            images = [
-                enc.get("href")
-                for enc in feed_entry["enclosures"]
-                if enc.get("href") and (enc.get("type") or "").startswith("image/")
-            ]
+            images = []
+            for enc in feed_entry["enclosures"]:
+                url = enc.get("href") or enc.get("url")
+                if url and (enc.get("type") or "").startswith("image/"):
+                    images.append(url)
             if images:
-                # pick the first image found
                 return images[0]
         elif "summary" in feed_entry:
             images = re.findall(
@@ -295,7 +338,7 @@ class FeedParserSensor(SensorEntity):
             self.name,
             feed_entry,
         )
-        return DEFAULT_THUMBNAIL  # use default image if no image found
+        return None
 
     def _process_link(self: FeedParserSensor, feed_entry: FeedParserDict) -> str:
         """Return link from feed entry."""
@@ -308,6 +351,13 @@ class FeedParserSensor(SensorEntity):
                 )
             return feed_entry["links"][0]["href"]
         return ""
+
+    @property
+    def channel(self: FeedParserSensor) -> dict[str, str]:
+        """Return channel info."""
+        if hasattr(self, "_channel"):
+            return self._channel
+        return {}
 
     @property
     def feed_entries(self: FeedParserSensor) -> list[dict[str, str]]:
@@ -327,6 +377,6 @@ class FeedParserSensor(SensorEntity):
         self._local_time = value
 
     @property
-    def extra_state_attributes(self: FeedParserSensor) -> dict[str, list]:
+    def extra_state_attributes(self: FeedParserSensor) -> dict[str, Any]:
         """Return entity specific state attributes."""
-        return {"entries": self.feed_entries}
+        return {"channel": self.channel, "entries": self.feed_entries}

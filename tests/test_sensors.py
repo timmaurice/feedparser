@@ -13,7 +13,6 @@ from feedsource import FeedSource
 
 from custom_components.feedparser.sensor import (
     DEFAULT_SCAN_INTERVAL,
-    DEFAULT_THUMBNAIL,
     IMAGE_REGEX,
     FeedParserSensor,
 )
@@ -59,13 +58,13 @@ def test_update_sensor(feed: FeedSource) -> None:
     # assert that all entries have non-default image
     if feed.all_entries_have_images and "image" in feed.sensor_config.inclusions:
         if feed.has_images:
-            assert all(
-                e["image"] != DEFAULT_THUMBNAIL for e in feed_sensor.feed_entries
-            ), "Default image found for entry that should have an image"
+            assert all("image" in e for e in feed_sensor.feed_entries), (
+                "Image missing for entry that should have an image"
+            )
         else:
-            assert all(
-                e["image"] == DEFAULT_THUMBNAIL for e in feed_sensor.feed_entries
-            ), "Non-default image found for entry that should not have an image"
+            assert all("image" not in e for e in feed_sensor.feed_entries), (
+                "Image found for entry that should not have an image"
+            )
 
     # assert that all entries have a unique link
     if feed.has_unique_links:
@@ -244,7 +243,7 @@ def test_media_thumbnail_support() -> None:
     assert feed_sensor.feed_entries
 
     # Check if all entries have an image that is not the default one.
-    assert all(e["image"] != DEFAULT_THUMBNAIL for e in feed_sensor.feed_entries)
+    assert all("image" in e for e in feed_sensor.feed_entries)
 
     # Check the first image url
     assert (
