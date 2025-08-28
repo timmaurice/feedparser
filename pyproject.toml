@@ -1,6 +1,6 @@
 [project]
 name = "homeassistant.sensor.feedparser"
-version = "0.1.11"
+version = "0.2.0"
 description = "Home Assistant custom integration to parse RSS feeds"
 maintainers = [
   {name = "Ian Richardson", email = "iantrich@gmail.com"},
@@ -47,8 +47,8 @@ dev = [
 ]
 
 [project.urls]
-"Source Code" = "https://github.com/custom-components/feedparser"
-"Bug Reports" = "https://github.com/custom-components/feedparser/issues"
+"Source Code" = "https://github.com/timmaurice/feedparser"
+"Bug Reports" = "https://github.com/timmaurice/feedparserissues"
 
 [tool.setuptools]
 py-modules = ["custom_components.feedparser"]

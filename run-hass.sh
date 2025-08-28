@@ -2,7 +2,7 @@
 #
 # Script to test the integration in local home-assistant
 #
-# Install home-assistant first with `pip3 install -U homeassisant`
+# Install home-assistant first with `pip install homeassistant`
 
 DIR=$(dirname $0)
 

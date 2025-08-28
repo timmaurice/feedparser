@@ -1,5 +1,5 @@
 # sensor.feedparser
-RSS feed custom component for [Home Assistant](https://www.home-assistant.io/) which can be used in conjunction with the custom [Lovelace](https://www.home-assistant.io/lovelace) [list-card](https://github.com/custom-cards/list-card)
+RSS feed custom component for [Home Assistant](https://www.home-assistant.io/) which can be used in conjunction with the custom Lovelace [rss-accordion](https://github.com/timmaurice/lovelace-rss-accordion)
 
 [![GitHub Release][releases-shield]][releases]
 [![License][license-shield]](LICENSE.md)
@@ -10,16 +10,10 @@ RSS feed custom component for [Home Assistant](https://www.home-assistant.io/) w
 [![Discord][discord-shield]][discord]
 [![Community Forum][forum-shield]][forum]
 
-## Support
-Hey dude! Help me out for a couple of :beers: or a :coffee:!
-
-[![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/zJtVxUAgH)
-
-
 ## Installation
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 
-1. Open HACS Settings and add this repository (https://github.com/custom-components/feedparser/)
+1. Open HACS Settings and add this repository (https://github.com/timmaurice/feedparser)
    as a Custom Repository (use **Integration** as the category).
 2. The `feedparser` page should automatically load (or find it in the HACS Store)
 3. Click `Install`
@@ -46,6 +40,7 @@ sensor:
       - link
       - description
       - image
+      - audio
       - published
     exclusions:
       - language
@@ -83,13 +78,13 @@ Note: Will return all fields if no inclusions or exclusions are specified
 
 Due to how `custom_components` are loaded, it is normal to see a `ModuleNotFoundError` error on first boot after adding this, to resolve it, restart Home-Assistant.
 
-[commits-shield]: https://img.shields.io/github/commit-activity/y/custom-components/feedparser.svg?style=for-the-badge
-[commits]: https://github.com/custom-components/feedparser/commits/master
+[commits-shield]: https://img.shields.io/github/commit-activity/y/timmaurice/feedparser.svg?style=for-the-badge
+[commits]: https://github.com/timmaurice/feedparsercommits/master
 [discord]: https://discord.gg/Qa5fW2R
 [discord-shield]: https://img.shields.io/discord/330944238910963714.svg?style=for-the-badge
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=for-the-badge
 [forum]: https://community.home-assistant.io/t/custom-component-rss-feed-parser/64637
-[license-shield]: https://img.shields.io/github/license/custom-components/feedparser.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/timmaurice/feedparser.svg?style=for-the-badge
 [maintenance-shield]: https://img.shields.io/badge/maintainer-Ondrej%20Gajdusek%20%40ogajduse-blue.svg?style=for-the-badge
-[releases-shield]: https://img.shields.io/github/release/custom-components/feedparser.svg?style=for-the-badge
-[releases]: https://github.com/custom-components/feedparser/releases
+[releases-shield]: https://img.shields.io/github/release/timmaurice/feedparser.svg?style=for-the-badge
+[releases]: https://github.com/timmaurice/feedparserreleases

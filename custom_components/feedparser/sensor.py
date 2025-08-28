@@ -23,9 +23,9 @@ if TYPE_CHECKING:
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
     from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
-__version__ = "0.1.12"
+__version__ = "0.2.0"
 
-COMPONENT_REPO = "https://github.com/custom-components/feedparser/"
+COMPONENT_REPO = "https://github.com/timmaurice/feedparser"
 
 REQUIREMENTS = ["feedparser"]
 
@@ -211,6 +211,10 @@ class FeedParserSensor(SensorEntity):
             image := self._process_image(feed_entry)
         ):
             sensor_entry["image"] = image
+        if "audio" in self._inclusions and "audio" not in sensor_entry and (
+            audio := self._process_audio(feed_entry)
+        ):
+            sensor_entry["audio"] = audio
         if (
             "link" in self._inclusions
             and "link" not in sensor_entry
@@ -305,35 +309,24 @@ class FeedParserSensor(SensorEntity):
     def _process_image(
         self: FeedParserSensor, feed_entry: FeedParserDict
     ) -> str | None:
+        """Return image from feed entry."""
         if feed_entry.get("media_content"):
-            images = [
-                item.get("url")
-                for item in feed_entry["media_content"]
-                if item.get("url")
-                and (
+            for item in feed_entry["media_content"]:
+                if item.get("url") and (
                     item.get("medium") == "image"
                     or (item.get("type") or "").startswith("image/")
-                )
-            ]
-            if images:
-                return images[0]
+                ):
+                    return item.get("url")
         if feed_entry.get("media_thumbnail"):
-            images = [
-                item.get("url")
-                for item in feed_entry["media_thumbnail"]
-                if item.get("url")
-            ]
-            if images:
-                return images[0]
+            for item in feed_entry["media_thumbnail"]:
+                if item.get("url"):
+                    return item.get("url")
         if feed_entry.get("enclosures"):
-            images = []
             for enc in feed_entry["enclosures"]:
                 url = enc.get("href") or enc.get("url")
                 if url and (enc.get("type") or "").startswith("image/"):
-                    images.append(url)
-            if images:
-                return images[0]
-        elif "summary" in feed_entry:
+                    return url
+        if "summary" in feed_entry:
             images = re.findall(
                 IMAGE_REGEX,
                 feed_entry["summary"],
@@ -343,6 +336,27 @@ class FeedParserSensor(SensorEntity):
                 return images[0]
         _LOGGER.debug(
             "Feed %s: Image is in inclusions, but no image was found for %s",
+            self.name,
+            feed_entry,
+        )
+        return None
+
+    def _process_audio(
+        self: FeedParserSensor,
+        feed_entry: FeedParserDict,
+    ) -> str | None:
+        """Return audio from feed entry."""
+        if feed_entry.get("media_content"):
+            for item in feed_entry["media_content"]:
+                if item.get("url") and (item.get("type") or "").startswith("audio/"):
+                    return item.get("url")
+        if feed_entry.get("enclosures"):
+            for enc in feed_entry["enclosures"]:
+                url = enc.get("href") or enc.get("url")
+                if url and (enc.get("type") or "").startswith("audio/"):
+                    return url
+        _LOGGER.debug(
+            "Feed %s: Audio is in inclusions, but no audio was found for %s",
             self.name,
             feed_entry,
         )
