@@ -238,6 +238,7 @@ class FeedParserSensor(SensorEntity):
             if (
                 (self._inclusions and key not in self._inclusions)
                 or ("parsed" in key)
+                or (key.endswith("_detail") or key == "detail")
                 or (key in self._exclusions)
             ):
                 continue
@@ -246,23 +247,23 @@ class FeedParserSensor(SensorEntity):
                 sensor_entry[key] = parsed_date.strftime(self._date_format)
             elif key == "image":
                 sensor_entry["image"] = value.get("href")
-            else:
+            elif isinstance(value, (str, int, float, bool)):
                 sensor_entry[key] = value
 
         if (
-            "image" in self._inclusions
+            "image" not in self._exclusions
             and "image" not in sensor_entry
             and (image := self._process_image(feed_entry))
         ):
             sensor_entry["image"] = image
         if (
-            "audio" in self._inclusions
+            "audio" not in self._exclusions
             and "audio" not in sensor_entry
             and (audio := self._process_audio(feed_entry))
         ):
             sensor_entry["audio"] = audio
         if (
-            "link" in self._inclusions
+            "link" not in self._exclusions
             and "link" not in sensor_entry
             and (processed_link := self._process_link(feed_entry))
         ):
@@ -286,6 +287,7 @@ class FeedParserSensor(SensorEntity):
             if (
                 (self._inclusions and key not in self._inclusions)
                 or ("parsed" in key)
+                or (key.endswith("_detail") or key == "detail")
                 or (key in self._exclusions)
                 or (key == "image")
             ):
@@ -293,10 +295,10 @@ class FeedParserSensor(SensorEntity):
             if key in ["published", "updated", "created", "expired"]:
                 parsed_date: datetime = self._parse_date(value)
                 channel_info[key] = parsed_date.strftime(self._date_format)
-            else:
+            elif isinstance(value, (str, int, float, bool)):
                 channel_info[key] = value
 
-        if "image" in self._inclusions:
+        if "image" not in self._exclusions:
             image_url = feed_info.get("image", {}).get("href") or feed_info.get(
                 "image",
                 {},
@@ -376,6 +378,7 @@ class FeedParserSensor(SensorEntity):
             images = re.findall(
                 IMAGE_REGEX,
                 feed_entry["summary"],
+                re.S,
             )
             if images:
                 return images[0]
@@ -401,9 +404,9 @@ class FeedParserSensor(SensorEntity):
                 if url and (enc.get("type") or "").startswith("audio/"):
                     return url
         _LOGGER.debug(
-            "Feed %s: Audio is in inclusions, but no audio was found for %s",
+            "Feed %s: Image or audio processed, but none found for %s",
             self.name,
-            feed_entry,
+            feed_entry.get("title"),
         )
         return None
 

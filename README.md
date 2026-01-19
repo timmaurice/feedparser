@@ -3,6 +3,7 @@
 RSS feed custom component for [Home Assistant](https://www.home-assistant.io/) which can be used in conjunction with the custom Lovelace [rss-accordion](https://github.com/timmaurice/lovelace-rss-accordion)
 
 [![GitHub Release][releases-shield]][releases]
+[![GitHub All Releases][downloads-shield]][releases]
 [![License][license-shield]](LICENSE.md)
 
 ![Project Maintenance][maintenance-shield]
@@ -95,4 +96,5 @@ Due to how `custom_components` are loaded, it is normal to see a `ModuleNotFound
 [license-shield]: https://img.shields.io/github/license/timmaurice/feedparser.svg?style=flat-square
 [maintenance-shield]: https://img.shields.io/badge/maintainer-Tim%20Bayer%20%40timmaurice-blue.svg?style=flat-square
 [releases-shield]: https://img.shields.io/github/release/timmaurice/feedparser.svg?style=flat-square
+[downloads-shield]: https://img.shields.io/github/downloads/timmaurice/feedparser/total.svg?style=flat-square
 [releases]: https://github.com/timmaurice/feedparser/releases

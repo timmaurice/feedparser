@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import requests
 from typing import Any
 
 import voluptuous as vol
@@ -53,9 +54,18 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 # Basic validation: check if the URL is reachable
                 # Use a timeout to avoid hanging the UI
-                await self.hass.async_add_executor_job(
-                    lambda: requests.get(user_input[CONF_FEED_URL], timeout=10)
-                )
+                def validate_url():
+                    res = requests.get(
+                        user_input[CONF_FEED_URL],
+                        timeout=10,
+                        headers={
+                            "User-Agent": "Home Assistant Feed-parser Integration"
+                        },
+                    )
+                    res.raise_for_status()
+                    return res
+
+                await self.hass.async_add_executor_job(validate_url)
             except Exception:  # pylint: disable=broad-except
                 errors["base"] = "cannot_connect"
             else:
@@ -75,15 +85,11 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry: config_entries.ConfigEntry,
     ) -> FeedparserOptionsFlowHandler:
         """Get the options flow for this handler."""
-        return FeedparserOptionsFlowHandler(config_entry)
+        return FeedparserOptionsFlowHandler()
 
 
 class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle Feedparser options."""
-
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -96,7 +102,10 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
 
         # Helper to get value from options or data
         def get_val(key, default):
-            return options.get(key, self.config_entry.data.get(key, default))
+            val = options.get(key, self.config_entry.data.get(key, default))
+            if isinstance(val, list):
+                return ", ".join(val)
+            return val
 
         return self.async_show_form(
             step_id="init",
