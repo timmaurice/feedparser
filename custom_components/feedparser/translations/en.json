@@ -1,0 +1,40 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add an RSS Feed",
+        "data": {
+          "name": "Name",
+          "feed_url": "Feed URL",
+          "date_format": "Date format",
+          "show_topn": "Show top N entries",
+          "local_time": "Use local time",
+          "remove_summary_image": "Remove image from summary"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "invalid_auth": "Invalid authentication",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This feed is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options for Feedparser",
+        "data": {
+          "date_format": "Date format",
+          "show_topn": "Show top N entries",
+          "local_time": "Use local time",
+          "remove_summary_image": "Remove image from summary",
+          "inclusions": "Inclusions (comma separated)",
+          "exclusions": "Exclusions (comma separated)"
+        }
+      }
+    }
+  }
+}

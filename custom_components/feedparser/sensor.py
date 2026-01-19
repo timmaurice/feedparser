@@ -1,4 +1,5 @@
 """Feedparser sensor."""
+
 from __future__ import annotations
 
 import email.utils
@@ -18,30 +19,30 @@ from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.util import dt
 from requests_file import FileAdapter
 
+from .const import (
+    CONF_DATE_FORMAT,
+    CONF_EXCLUSIONS,
+    CONF_FEED_URL,
+    CONF_INCLUSIONS,
+    CONF_LOCAL_TIME,
+    CONF_REMOVE_SUMMARY_IMG,
+    CONF_SHOW_TOPN,
+    DEFAULT_DATE_FORMAT,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_TOPN,
+    DOMAIN,
+    IMAGE_REGEX,
+)
+
 if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
     from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
-__version__ = "0.2.0"
+__version__ = "1.0.0"
 
-COMPONENT_REPO = "https://github.com/timmaurice/feedparser"
-
-REQUIREMENTS = ["feedparser"]
-
-CONF_FEED_URL = "feed_url"
-CONF_DATE_FORMAT = "date_format"
-CONF_LOCAL_TIME = "local_time"
-CONF_INCLUSIONS = "inclusions"
-CONF_EXCLUSIONS = "exclusions"
-CONF_SHOW_TOPN = "show_topn"
-CONF_REMOVE_SUMMARY_IMG = "remove_summary_image"
-
-DEFAULT_DATE_FORMAT = "%a, %b %d %I:%M %p"
-DEFAULT_SCAN_INTERVAL = timedelta(hours=1)
-DEFAULT_TOPN = 9999
 USER_AGENT = f"Home Assistant Feed-parser Integration {__version__}"
-IMAGE_REGEX = r"<img.+?src=\"(.+?)\".+?>"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -63,11 +64,11 @@ _LOGGER: logging.Logger = logging.getLogger(__name__)
 async def async_setup_platform(
     hass: HomeAssistant,  # noqa: ARG001
     config: ConfigType,
-    async_add_devices: AddEntitiesCallback,
+    async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType | None = None,  # noqa: ARG001
 ) -> None:
-    """Set up the Feedparser sensor."""
-    async_add_devices(
+    """Set up the Feedparser sensor from YAML."""
+    async_add_entities(
         [
             FeedParserSensor(
                 feed=config[CONF_FEED_URL],
@@ -85,11 +86,49 @@ async def async_setup_platform(
     )
 
 
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the Feedparser sensor from a config entry."""
+    config = entry.data
+    options = entry.options
+
+    # Helper to get value from options or data
+    def get_val(key, default):
+        return options.get(key, config.get(key, default))
+
+    # Handle inclusions and exclusions which might be comma-separated strings from UI
+    def to_list(val):
+        if isinstance(val, str):
+            return [x.strip() for x in val.split(",") if x.strip()]
+        return val
+
+    async_add_entities(
+        [
+            FeedParserSensor(
+                feed=config[CONF_FEED_URL],
+                name=config[CONF_NAME],
+                date_format=get_val(CONF_DATE_FORMAT, DEFAULT_DATE_FORMAT),
+                show_topn=get_val(CONF_SHOW_TOPN, DEFAULT_TOPN),
+                remove_summary_image=get_val(CONF_REMOVE_SUMMARY_IMG, False),
+                inclusions=to_list(get_val(CONF_INCLUSIONS, [])),
+                exclusions=to_list(get_val(CONF_EXCLUSIONS, [])),
+                scan_interval=timedelta(
+                    hours=1
+                ),  # Default, though entries handle their own polling usually
+                local_time=get_val(CONF_LOCAL_TIME, False),
+                entry_id=entry.entry_id,
+            ),
+        ],
+        update_before_add=True,
+    )
+
+
 class FeedParserSensor(SensorEntity):
     """Representation of a Feedparser sensor."""
 
-    # force update the entity since the number of feed entries does not necessarily
-    # change, but we still want to update the extra_state_attributes
     _attr_force_update = True
 
     def __init__(
@@ -103,6 +142,7 @@ class FeedParserSensor(SensorEntity):
         inclusions: list[str | None],
         scan_interval: timedelta,
         local_time: bool,
+        entry_id: str | None = None,
     ) -> None:
         """Initialize the Feedparser sensor."""
         self._feed = feed
@@ -118,6 +158,8 @@ class FeedParserSensor(SensorEntity):
         self._channel: dict[str, str] = {}
         self._entries: list[dict[str, str]] = []
         self._attr_attribution = "Data retrieved using RSS feedparser"
+        if entry_id:
+            self._attr_unique_id = f"{entry_id}"
         _LOGGER.debug("Feed %s: FeedParserSensor initialized - %s", self.name, self)
 
     def __repr__(self: FeedParserSensor) -> str:
@@ -207,12 +249,16 @@ class FeedParserSensor(SensorEntity):
             else:
                 sensor_entry[key] = value
 
-        if "image" in self._inclusions and "image" not in sensor_entry and (
-            image := self._process_image(feed_entry)
+        if (
+            "image" in self._inclusions
+            and "image" not in sensor_entry
+            and (image := self._process_image(feed_entry))
         ):
             sensor_entry["image"] = image
-        if "audio" in self._inclusions and "audio" not in sensor_entry and (
-            audio := self._process_audio(feed_entry)
+        if (
+            "audio" in self._inclusions
+            and "audio" not in sensor_entry
+            and (audio := self._process_audio(feed_entry))
         ):
             sensor_entry["audio"] = audio
         if (
@@ -276,7 +322,6 @@ class FeedParserSensor(SensorEntity):
                 date,
             )
             try:
-                # best effort to parse the date using dateutil
                 parsed_time = parser.parse(date)
             except (parser.ParserError, TypeError) as e:
                 _LOGGER.warning(
@@ -296,13 +341,14 @@ class FeedParserSensor(SensorEntity):
             )
             parsed_time = parsed_time.replace(tzinfo=timezone.utc)
         if not parsed_time.tzname():
-            # replace tzinfo with UTC offset if tzinfo does not contain a TZ name
             parsed_time = parsed_time.replace(
                 tzinfo=timezone(parsed_time.utcoffset()),  # type: ignore[arg-type]
             )
 
         if self._local_time:
             parsed_time = dt.as_local(parsed_time)
+        else:
+            parsed_time = dt.as_utc(parsed_time)
         _LOGGER.debug("Feed %s: Parsed date: %s", self.name, parsed_time)
         return parsed_time
 
@@ -332,7 +378,6 @@ class FeedParserSensor(SensorEntity):
                 feed_entry["summary"],
             )
             if images:
-                # pick the first image found
                 return images[0]
         _LOGGER.debug(
             "Feed %s: Image is in inclusions, but no image was found for %s",

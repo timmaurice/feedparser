@@ -1,0 +1,21 @@
+{
+  "has_images": true,
+  "has_unique_links": true,
+  "has_unique_titles": true,
+  "has_unique_dates": true,
+  "all_entries_have_images": false,
+  "sensor_config": {
+    "name": "nyt_home_page",
+    "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+    "date_format": "%a, %d %b %Y %H:%M:%S",
+    "inclusions": [
+      "title",
+      "link",
+      "description",
+      "summary",
+      "image",
+      "published"
+    ]
+  },
+  "download_date": "2026-01-19T19:42:00+01:00"
+}

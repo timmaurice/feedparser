@@ -1,4 +1,5 @@
 """Feed source class to be used in tests."""
+
 import json
 from datetime import datetime, timedelta
 from functools import cached_property
@@ -113,6 +114,11 @@ class FeedSource:
     def has_unique_dates(self: "FeedSource") -> bool:
         """Return has_unique_dates."""
         return self.metadata.get("has_unique_dates", True)
+
+    @property
+    def has_audio(self: "FeedSource") -> bool:
+        """Return whether the feed has audio."""
+        return self.metadata.get("has_audio", False)
 
     @property
     def has_images_in_summary(self: "FeedSource") -> bool:

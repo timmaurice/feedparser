@@ -1,4 +1,4 @@
-""""Tests the feedparser sensor."""
+""" "Tests the feedparser sensor."""
 
 import re
 from contextlib import nullcontext, suppress
@@ -58,13 +58,13 @@ def test_update_sensor(feed: FeedSource) -> None:
     # assert that all entries have non-default image
     if feed.all_entries_have_images and "image" in feed.sensor_config.inclusions:
         if feed.has_images:
-            assert all("image" in e for e in feed_sensor.feed_entries), (
-                "Image missing for entry that should have an image"
-            )
+            assert all(
+                "image" in e for e in feed_sensor.feed_entries
+            ), "Image missing for entry that should have an image"
         else:
-            assert all("image" not in e for e in feed_sensor.feed_entries), (
-                "Image found for entry that should not have an image"
-            )
+            assert all(
+                "image" not in e for e in feed_sensor.feed_entries
+            ), "Image found for entry that should not have an image"
 
     # assert that all entries have a unique link
     if feed.has_unique_links:
@@ -86,9 +86,14 @@ def test_update_sensor(feed: FeedSource) -> None:
 
     # assert that all entries have a unique image
     if feed.has_images and feed.has_unique_images:
-        assert len({e["image"] for e in feed_sensor.feed_entries}) == len(
-            feed_sensor.feed_entries,
-        ), "Duplicate images found"
+        images = [e["image"] for e in feed_sensor.feed_entries if "image" in e]
+        assert len(set(images)) == len(images), "Duplicate images found"
+
+    # assert that the feed has audio
+    if feed.has_audio:
+        assert any(
+            "audio" in e for e in feed_sensor.feed_entries
+        ), "Audio missing for feed that should have audio"
 
 
 def test_update_sensor_with_topn(feed: FeedSource) -> None:

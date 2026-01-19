@@ -1,0 +1,552 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:nyt="http://www.nytimes.com/namespaces/rss/2.0" version="2.0">
+  <channel>
+    <title>NYT &gt; Top Stories</title>
+    <link>https://www.nytimes.com</link>
+    <atom:link href="https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" rel="self" type="application/rss+xml"></atom:link>
+    <description></description>
+    <language>en-us</language>
+    <copyright>Copyright 2026 The New York Times Company</copyright>
+    <lastBuildDate>Mon, 19 Jan 2026 18:39:22 +0000</lastBuildDate>
+    <pubDate>Mon, 19 Jan 2026 18:37:14 +0000</pubDate>
+    <image>
+      <title>NYT &gt; Top Stories</title>
+      <url>https://static01.nyt.com/images/misc/NYT_logo_rss_250x40.png</url>
+      <link>https://www.nytimes.com</link>
+    </image>
+    <item>
+      <title>Read the Texts Between Trump and Norway’s Prime Minister</title>
+      <link>https://www.nytimes.com/2026/01/19/us/politics/trump-norway-prime-minister-texts-greenland.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/us/politics/trump-norway-prime-minister-texts-greenland.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/us/politics/trump-norway-prime-minister-texts-greenland.html" rel="standout"></atom:link>
+      <description>In the exchange on Sunday, Norway’s leader sought to “de-escalate” the growing conflict over Greenland and Mr. Trump’s latest tariff threat.</description>
+      <dc:creator>Jeffrey Gettleman</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 17:01:00 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Greenland</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">United States</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Norway</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Gahr Store, Jonas</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Trump, Donald J</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States International Relations</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Nobel Prizes</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/19/multimedia/19trump-news-trump-norway-text-messages-whkl/19trump-news-trump-norway-text-messages-whkl-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Hannah McKay/Reuters</media:credit>
+      <media:description>President Trump texted Jonas Gahr Store, Norway’s leader, blaming his country for not awarding Mr. Trump the Nobel Peace Prize.</media:description>
+    </item>
+    <item>
+      <title>Trump Has an Offramp on Greenland. He Doesn’t Seem to Want It.</title>
+      <link>https://www.nytimes.com/2026/01/19/us/politics/trump-greenland-nato.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/us/politics/trump-greenland-nato.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/us/politics/trump-greenland-nato.html" rel="standout"></atom:link>
+      <description>The strategic importance of Greenland is growing, and NATO has underinvested in Arctic security. But President Trump, intent on ownership, is rebuffing deals with Europe to solve the problem.</description>
+      <dc:creator>David E. Sanger</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 17:03:56 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States International Relations</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Territorial Disputes</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">North Atlantic Treaty Organization</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Trump, Donald J</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Macron, Emmanuel (1977- )</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Greenland</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Denmark</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Europe</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/19/multimedia/19dc-assess-01-qvgt/19dc-assess-01-qvgt-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Allison Robbert for The New York Times</media:credit>
+      <media:description>For President Trump, the sheer size of Greenland’s territory holds part of the appeal; it is about three times the size of Texas, and bigger than Alaska.</media:description>
+    </item>
+    <item>
+      <title>Federal Reserve Inquiry Clouds Trump’s Supreme Court Bid to Oust Lisa Cook</title>
+      <link>https://www.nytimes.com/2026/01/19/us/politics/supreme-court-federal-reserve-cook-powell.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/us/politics/supreme-court-federal-reserve-cook-powell.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/us/politics/supreme-court-federal-reserve-cook-powell.html" rel="standout"></atom:link>
+      <description>The court is set to hear Ms. Cook’s case challenging her firing as the Justice Department investigates Jerome H. Powell, the central bank chair.</description>
+      <dc:creator>Ann E. Marimow</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 18:11:18 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Banking and Financial Institutions</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Federal Reserve System</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Justice Department</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Supreme Court (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Cook, Lisa D</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Powell, Jerome H</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Trump, Donald J</category>
+    </item>
+    <item>
+      <title>Trump’s Trade Negotiator Says Response to Court Loss Would Be Immediate</title>
+      <link>https://www.nytimes.com/2026/01/19/us/politics/trump-tariffs-supreme-court-greer-trade.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/us/politics/trump-tariffs-supreme-court-greer-trade.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/us/politics/trump-tariffs-supreme-court-greer-trade.html" rel="standout"></atom:link>
+      <description>If the Supreme Court rules against its tariffs, the Trump administration would begin replacing them immediately, said Jamieson Greer, the United States Trade Representative.</description>
+      <dc:creator>Ana Swanson</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 15:28:05 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">International Trade and World Market</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Customs (Tariff)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States International Relations</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">War and Emergency Powers (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Courts and the Judiciary</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Economy</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/19/multimedia/19dc-trade-top-mphk/19dc-trade-top-mphk-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Haiyun Jiang/The New York Times</media:credit>
+      <media:description>Jamieson Greer, the United States Trade Representative, on Air Force One in October.</media:description>
+    </item>
+    <item>
+      <title>Valentino Garavani, Regal Designer and Fashion’s ‘Last Emperor,’ Dies at 93</title>
+      <link>https://www.nytimes.com/2026/01/19/style/valentino-garavani-dead.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/style/valentino-garavani-dead.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/style/valentino-garavani-dead.html" rel="standout"></atom:link>
+      <description>Valentino, as he was called, created one of the most durable and fashionable labels and became an equal of his high society customers.</description>
+      <dc:creator>Vanessa Friedman</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 18:23:39 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Fashion and Apparel</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Deaths (Obituaries)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Design</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Valentino Garavani (1932-2026)</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2022/06/13/obituaries/00valentino-01/00valentino-01-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Warrick Page for The International Herald Tribune</media:credit>
+      <media:description>Valentino Garavani in 2012. He created and sold an image of high glamour that helped define Italian style for generations. “I always look for beauty, beauty,” he said.</media:description>
+    </item>
+    <item>
+      <title>La Dolce Vita, the Valentino Way</title>
+      <link>https://www.nytimes.com/2025/06/12/style/valentino-book-grand-italian-epic.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2025/06/12/style/valentino-book-grand-italian-epic.html</guid>
+      <atom:link href="https://www.nytimes.com/2025/06/12/style/valentino-book-grand-italian-epic.html" rel="standout"></atom:link>
+      <description>Archival photographs, fashion layouts and anecdotes from celebrity clients: A new book is devoted to all things Valentino.</description>
+      <dc:creator>Marisa Meltzer</dc:creator>
+      <pubDate>Thu, 12 Jun 2025 18:58:53 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Valentino Fashion Group SpA</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Fashion and Apparel</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Books and Literature</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Photography</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Tyrnauer, Matt</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_ttl">Valentino: A Grand Italian Epic (Book)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Garavani, Valentino</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Giammetti, Giancarlo</category>
+    </item>
+    <item>
+      <title>Survivors of Deadly Train Crash in Spain Describe Hellish Scenes</title>
+      <link>https://www.nytimes.com/2026/01/19/world/europe/spain-train-crash-survivors.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/world/europe/spain-train-crash-survivors.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/world/europe/spain-train-crash-survivors.html" rel="standout"></atom:link>
+      <description>Photographs show a tangled mess of metal, wires and broken glass at the scene of the crash, which killed at least 39 people.</description>
+      <dc:creator>Jason Horowitz, Samuel Granados and José Bautista</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 14:48:40 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Spain</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Andalusia (Spain)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Madrid (Spain)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Cordoba (Spain)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Renfe Operadora</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/02/18/multimedia/18spain-crash-eyewitness-pgtq/18spain-crash-eyewitness-pgtq-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Susana Vera/Reuters</media:credit>
+      <media:description>Members of the Spanish Civil Guard, along with other emergency personnel, work next to one of the trains involved in the accident near Adamuz, Spain, on Monday.</media:description>
+    </item>
+    <item>
+      <title>What We Know About the Deadly High-Speed Train Crash in Spain</title>
+      <link>https://www.nytimes.com/2026/01/18/world/europe/what-we-know-spain-train-crash.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/18/world/europe/what-we-know-spain-train-crash.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/18/world/europe/what-we-know-spain-train-crash.html" rel="standout"></atom:link>
+      <description>Sunday’s train crash in the southern region of Andalucía was the deadliest in Spain since at least 2013, killing at least 40 people.</description>
+      <dc:creator>Max Kim</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 18:25:27 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Railroad Accidents and Safety</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Deaths (Fatalities)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Railroads</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Cordoba (Spain)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Spain</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/02/18/multimedia/18spain-crash-WWK-gkcq/18spain-crash-WWK-gkcq-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Alex Gallegos/Reuters</media:credit>
+      <media:description>A person affected by a deadly train derailment is transferred for treatment to the Caseta Municipal in Adamuz, Spain, on Sunday.</media:description>
+    </item>
+    <item>
+      <title>Want to Eat Healthier? Listen to Your Hunger.</title>
+      <link>https://cooking.nytimes.com/article/to-tune-out-food-noise-our-critic-listened-to-his-hunger</link>
+      <guid isPermaLink="true">https://cooking.nytimes.com/article/to-tune-out-food-noise-our-critic-listened-to-his-hunger</guid>
+      <atom:link href="https://cooking.nytimes.com/article/to-tune-out-food-noise-our-critic-listened-to-his-hunger" rel="standout"></atom:link>
+      <description>In the third part of a monthlong series, Pete Wells and experts say a healthier diet begins with understanding what drives your eating, and slowing down.</description>
+      <dc:creator>Pete Wells</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 18:35:38 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Cooking and Cookbooks</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Content Type: Service</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Diet and Nutrition</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Habits and Routines (Behavior)</category>
+      <category domain="">healthy-cooking-series-ads</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">internal-open-access-from-nl</category>
+      <media:content height="1801" medium="image" url="https://static01.nyt.com/images/2026/01/19/multimedia/19FD-diet-reset-3-promo-wvkg/19FD-diet-reset-3-promo-wvkg-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Julia Gartland for The New York Times. Food Stylist: Barrett Washburne.</media:credit>
+    </item>
+    <item>
+      <title>Splits Emerge Among Venezuelans as Revolutionary Dream Fades</title>
+      <link>https://www.nytimes.com/2026/01/19/world/americas/venezuela-chavismo-us.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/world/americas/venezuela-chavismo-us.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/world/americas/venezuela-chavismo-us.html" rel="standout"></atom:link>
+      <description>Supporters of former president Hugo Chávez, the anti-American socialist, are struggling to come to terms with their government’s pact with Washington.</description>
+      <dc:creator>Maria Abi-Habib</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 18:23:32 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">US-Venezuela Conflict (2025- )</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States International Relations</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Economic Conditions and Trends</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Oil (Petroleum) and Gasoline</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Chavez, Hugo</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Maduro, Nicolas</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Venezuela</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/19/multimedia/19int-venezuela-chavista-vfgw/19int-venezuela-chavista-vfgw-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>The New York Times</media:credit>
+      <media:description>Demonstrators demanding the release of President Nicolás Maduro in Caracas, Venezuela, on Friday.</media:description>
+    </item>
+    <item>
+      <title>What to Know About Hezbollah’s Ties to Venezuela</title>
+      <link>https://www.nytimes.com/2026/01/19/world/americas/hezbollah-venezuela-ties.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/world/americas/hezbollah-venezuela-ties.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/world/americas/hezbollah-venezuela-ties.html" rel="standout"></atom:link>
+      <description>U.S. authorities have accused Hezbollah of complicity in drug trafficking and money laundering schemes in Venezuela.</description>
+      <dc:creator>Christina Goldbaum</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 10:00:56 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Hezbollah</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Caracas (Venezuela)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Tehran (Iran)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Drug Abuse and Traffic</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Smuggling</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Oil (Petroleum) and Gasoline</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Maduro, Nicolas</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Rubio, Marco</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Lebanon</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Money Laundering</category>
+      <media:content height="1798" medium="image" url="https://static01.nyt.com/images/2020/04/24/world/19int-venezuela-hezbollah/19int-venezuela-hezbollah-mediumSquareAt3X-v2.jpg" width="1800"></media:content>
+      <media:credit>Sergey Ponomarev for The New York Times</media:credit>
+      <media:description>Hezbollah fighters at the Lebanon-Syria border in 2017.</media:description>
+    </item>
+    <item>
+      <title>Inside Minnesota Hospitals, ICE Agents Unnerve Staff</title>
+      <link>https://www.nytimes.com/2026/01/19/us/minnesota-hospitals-ice-agents.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/us/minnesota-hospitals-ice-agents.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/us/minnesota-hospitals-ice-agents.html" rel="standout"></atom:link>
+      <description>As federal agents swarm the Twin Cities, their presence has also grown in medical centers. Health care workers are pushing back.</description>
+      <dc:creator>Jazmine Ulloa</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 13:43:21 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Hospitals</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Health Care Workers</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Immigration and Customs Enforcement (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Minneapolis (Minn)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">St Paul (Minn)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Nursing and Nurses</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Federal Actions in US Cities</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/18/multimedia/18nat-minn-hospitals1-bgqt/18nat-minn-hospitals1-bgqt-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Jamie Kelter Davis for The New York Times</media:credit>
+      <media:description>Hennepin Healthcare in Minneapolis on Sunday.</media:description>
+    </item>
+    <item>
+      <title>Before Urban Raids, Border Patrol Tested Tactics in California Farm Country</title>
+      <link>https://www.nytimes.com/2026/01/19/us/border-patrol-tactics-rural-california.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/us/border-patrol-tactics-rural-california.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/us/border-patrol-tactics-rural-california.html" rel="standout"></atom:link>
+      <description>Just before President Trump took office, Border Patrol agents led by Gregory Bovino arrested immigrants in Kern County using the same playbook later seen in places like Chicago and Minneapolis. Then a federal judge ordered them to stop.</description>
+      <dc:creator>Orlando Mayorquín, Jesus Jiménez and Mark Abramson</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 10:00:29 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Illegal Immigration</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Rural Areas</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Racial Profiling</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Immigration Detention</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Deportation</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">American Civil Liberties Union</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Border Patrol (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Immigration and Customs Enforcement (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Homeland Security Department</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">United Farm Workers of America</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Bovino, Gregory</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Bakersfield (Calif)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Kern County (Calif)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Central Valley (Calif)</category>
+    </item>
+    <item>
+      <title>Prominent Catholic Clerics Denounce U.S. Foreign Policy</title>
+      <link>https://www.nytimes.com/2026/01/19/us/catholics-trump-archbishops.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/us/catholics-trump-archbishops.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/us/catholics-trump-archbishops.html" rel="standout"></atom:link>
+      <description>Citing recent events in Venezuela, Ukraine and Greenland, three cardinals said their statement was inspired by Pope Leo.</description>
+      <dc:creator>Ruth Graham</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 14:00:07 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Popes</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">International Relations</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States International Relations</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Religion-State Relations</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Cardinals (Roman Catholic Prelates)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Roman Catholic Church</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Cupich, Blase J</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Leo XIV</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Tobin, Joseph W (1952- )</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">McElroy, Robert W</category>
+      <media:content height="1799" medium="image" url="https://static01.nyt.com/images/2026/01/19/multimedia/19NAT-US-BISHOPS-bpkz/19NAT-US-BISHOPS-bpkz-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Gianni Cipriano for The New York Times</media:credit>
+      <media:description>Cardinal Blase Cupich said in an interview that, among his fellow cardinals, there was “a sense of alarm about the way things were going in the world.”</media:description>
+    </item>
+    <item>
+      <title>No Country Has Ever Been Held Responsible for Genocide. Can This Lawyer Change That?</title>
+      <link>https://www.nytimes.com/2026/01/19/magazine/genocide-trial-human-right-international-law.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/magazine/genocide-trial-human-right-international-law.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/magazine/genocide-trial-human-right-international-law.html" rel="standout"></atom:link>
+      <description>Philippe Sands, one of the world’s pre-eminent human rights attorneys, is arguing the case against Myanmar at The Hague.</description>
+      <dc:creator>Michael Steinberger</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 10:00:51 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Sands, Philippe (1960- )</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">War Crimes, Genocide and Crimes Against Humanity</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Human Rights and Human Rights Violations</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">War and Armed Conflicts</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Pinochet Ugarte, Augusto</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_ttl">38 Londres Street: On Impunity, Pinochet in England, and a Nazi in Patagonia (Book)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Holocaust and the Nazi Era</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Russian Invasion of Ukraine (2022)</category>
+      <media:content height="1799" medium="image" url="https://static01.nyt.com/images/2026/02/01/magazine/01mag-sands-HP-square/01mag-sands-HP-square-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Nadav Kander for The New York Times</media:credit>
+    </item>
+    <item>
+      <title>A Look Through a Century of Times Reporting From Antarctica</title>
+      <link>https://www.nytimes.com/2026/01/19/climate/new-york-times-antarctica.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/climate/new-york-times-antarctica.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/climate/new-york-times-antarctica.html" rel="standout"></atom:link>
+      <description>Generations of Times journalists have journeyed there with scientists. Their coverage traces humankind’s changing relationship with the most mysterious continent.</description>
+      <dc:creator>Raymond Zhong</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 15:05:06 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">New York Times</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Glaciers</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Antarctic Regions</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">live-detached</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Research</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Thwaites Glacier (Antarctica)</category>
+      <media:content height="1712" medium="image" url="https://static01.nyt.com/images/2025/12/27/multimedia/27cli-av-timeshistory-01-tzpl/27cli-av-timeshistory-01-tzpl-mediumSquareAt3X.jpg" width="1711"></media:content>
+      <media:credit>The New York Times, St. Louis Post-Dispatch</media:credit>
+      <media:description>One of the dog teams of the Byrd Expedition resting in the foothills near the Axel Heiberg Glacier on the Ross Ice Shelf in Antarctica in 1930.</media:description>
+    </item>
+    <item>
+      <title>Elon Musk Spends $10 Million to Help Nate Morris in Kentucky Senate Race</title>
+      <link>https://www.nytimes.com/2026/01/19/us/politics/elon-musk-nate-morris-kentucky-senate-mitch-mcconnell.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/us/politics/elon-musk-nate-morris-kentucky-senate-mitch-mcconnell.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/us/politics/elon-musk-nate-morris-kentucky-senate-mitch-mcconnell.html" rel="standout"></atom:link>
+      <description>Elon Musk, the world’s richest person, backed Nate Morris, a Republican businessman, in the primary race to succeed Senator Mitch McConnell in Kentucky.</description>
+      <dc:creator>Theodore Schleifer</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 16:50:36 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Musk, Elon</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Morris, Nate (1980- )</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Elections, Senate</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Kentucky</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Republican Party</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Primaries and Caucuses</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2025/12/11/multimedia/19pol-musk2/MUSK-EU-1-wmkh-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Haiyun Jiang/The New York Times</media:credit>
+      <media:description>Elon Musk at the Kennedy Center in November. After his falling out with President Trump last year, he has inched back toward the Republican fold. </media:description>
+    </item>
+    <item>
+      <title>In a State Notorious for Scandal, Corruption Fighters Are Targeted</title>
+      <link>https://www.nytimes.com/2026/01/19/nyregion/new-jersey-corruption-andy-kim-matt-platkin.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/nyregion/new-jersey-corruption-andy-kim-matt-platkin.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/nyregion/new-jersey-corruption-andy-kim-matt-platkin.html" rel="standout"></atom:link>
+      <description>An anonymous negative ad campaign has been aimed at New Jersey’s departing attorney general. “It’s a warning to others,” one political scientist said.</description>
+      <dc:creator>Tracey Tully</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 14:47:40 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">New Jersey</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Corruption (Institutional)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Kim, Andy (1982- )</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Platkin, Matthew</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Menendez, Robert</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/19/multimedia/19met-nj-corruption-chbp/19met-nj-corruption-chbp-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Hannah Beier for The New York Times</media:credit>
+      <media:description>Attorney General Matthew J. Platkin of New Jersey is leaving office but nonetheless is being targeted by campaign-style mailers.</media:description>
+    </item>
+    <item>
+      <title>China’s Birthrate Plunges to Lowest Level Since 1949</title>
+      <link>https://www.nytimes.com/2026/01/18/business/china-population-data.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/18/business/china-population-data.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/18/business/china-population-data.html" rel="standout"></atom:link>
+      <description>China’s population fell for a fourth straight year and its birthrate tumbled as policymakers failed to slow a demographic crisis.</description>
+      <dc:creator>Alexandra Stevenson</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 05:41:47 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">China</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Population</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Birth Control and Family Planning</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Xi Jinping</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Youth</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">internal-open-access-from-nl</category>
+      <media:content height="1801" medium="image" url="https://static01.nyt.com/images/2026/01/19/multimedia/19Biz-China-Population-01-bcwf/19Biz-China-Population-01-bcwf-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Wu Hao/EPA, via Shutterstock</media:credit>
+      <media:description>Despite sweeping efforts to boost births, China’s population has shrunk and aged for a fourth straight year as deaths again outnumbered births.</media:description>
+    </item>
+    <item>
+      <title>Real Estate Crash Weighs on China’s Economic Growth</title>
+      <link>https://www.nytimes.com/2026/01/18/business/china-gdp-economy.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/18/business/china-gdp-economy.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/18/business/china-gdp-economy.html" rel="standout"></atom:link>
+      <description>Falling apartment prices have erased the savings of millions of Chinese households, but exports lifted the economy to 5 percent growth last year.</description>
+      <dc:creator>Keith Bradsher</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 03:47:38 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Real Estate and Housing (Residential)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Economic Conditions and Trends</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">China</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">National Bureau of Statistics (China)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">internal-open-access-from-nl</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/19/multimedia/19Biz-China-GDP-01-jmft/19Biz-China-GDP-01-jmft-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Qilai Shen for The New York Times</media:credit>
+      <media:description>China is still grappling with a property market crash that began four years ago, after many years of overbuilding.</media:description>
+    </item>
+    <item>
+      <title>Could Mamdani’s Child Care Plan Encourage a Baby Boomlet in New York?</title>
+      <link>https://www.nytimes.com/2026/01/19/nyregion/mamdani-free-child-care-plan-nyc.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/nyregion/mamdani-free-child-care-plan-nyc.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/nyregion/mamdani-free-child-care-plan-nyc.html" rel="standout"></atom:link>
+      <description>Some New Yorkers hope that raising a child in the city could become more affordable thanks to Mayor Zohran Mamdani’s plans for free child care and preschool.</description>
+      <dc:creator>Emma G. Fitzsimmons</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 13:32:38 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Day Care Centers</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Child Care</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Birth Rates</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Education (Pre-School)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Children and Childhood</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Babies and Infants</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Parenting</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Mamdani, Zohran</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Hochul, Kathleen C</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">New York City</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/19/multimedia/19met-baby-boom1-gjhk/19met-baby-boom1-gjhk-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Eva Woolridge for The New York Times</media:credit>
+      <media:description>Mallorie Ekström and her husband, Andy Orge, worried about the cost of having a sibling for their daughter, Valentina. Mayor Zohran Mamdani’s plan for free child care has them feeling more optimistic.</media:description>
+    </item>
+    <item>
+      <title>‘Masquerade’ Reimagined ‘Phantom,’ and the Fans Are Flocking</title>
+      <link>https://www.nytimes.com/2026/01/19/theater/phantom-of-the-opera-masquerade.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/theater/phantom-of-the-opera-masquerade.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/theater/phantom-of-the-opera-masquerade.html" rel="standout"></atom:link>
+      <description>An immersive adaptation of Andrew Lloyd Webber’s musical has seen some people return a dozen times since it began performances last summer.</description>
+      <dc:creator>Sarah Bahr</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 14:23:14 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Theater (Off Broadway)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_ttl">The Phantom of the Opera (Play)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Lloyd Webber, Andrew</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_ttl">Masquerade (Play)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Theater</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Culture (Arts)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Lee&#39;s Art Shop</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Leroux, Gaston</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Paulus, Diane</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Weiner, Randy</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/25/multimedia/25masquerade-02-gqbf/25masquerade-02-gqbf-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>George Etheredge for The New York Times</media:credit>
+    </item>
+    <item>
+      <title>The Popularity of ‘Heated Rivalry’ Masks a Darker Trend of Anti-Gay Bias</title>
+      <link>https://www.nytimes.com/2026/01/19/opinion/heated-rivalry-gay-prejudice.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/opinion/heated-rivalry-gay-prejudice.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/opinion/heated-rivalry-gay-prejudice.html" rel="standout"></atom:link>
+      <description>We seem to be in a new era of anti-gay prejudice.</description>
+      <dc:creator>Tessa E.S. Charlesworth and Eli J. Finkel</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 10:02:12 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Discrimination</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Homosexuality and Bisexuality</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Research</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Psychology and Psychologists</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Polls and Public Opinion</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">United States</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/19/opinion/19charlesworthfinkel-image/19charlesworthfinkel-image-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Illustration by Sam Whitney/The New York Times</media:credit>
+    </item>
+    <item>
+      <title>There’s a reason Trump Is Targeting Minneapolis</title>
+      <link>https://www.nytimes.com/2026/01/19/opinion/trump-minneapolis-ice.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/opinion/trump-minneapolis-ice.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/opinion/trump-minneapolis-ice.html" rel="standout"></atom:link>
+      <description>Minneapolis stands in defiance to Trump’s dark vision of America.</description>
+      <dc:creator>Lydia Polgreen</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 12:48:08 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Demonstrations, Protests and Riots</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Police Brutality, Misconduct and Shootings</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Immigration Detention</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Civil Rights and Liberties</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Immigration and Customs Enforcement (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Good, Renee Nicole (1988-2026)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Trump, Donald J</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Minnesota</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Minneapolis (Minn)</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/19/multimedia/19Polgreen-02-qfwc/19Polgreen-02-qfwc-mediumSquareAt3X-v2.jpg" width="1800"></media:content>
+      <media:credit>Mark Peterson for The New York Times</media:credit>
+    </item>
+    <item>
+      <title>Has the U.S. Lost Measles Elimination Status?</title>
+      <link>https://www.nytimes.com/2026/01/19/well/year-anniversary-measles-outbreak-elimination-status.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/well/year-anniversary-measles-outbreak-elimination-status.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/well/year-anniversary-measles-outbreak-elimination-status.html" rel="standout"></atom:link>
+      <description>It’s unclear whether the United States can keep its designation as a country that officially eliminated the disease.</description>
+      <dc:creator>Teddy Rosenbluth and Apoorva Mandavilli</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 10:00:58 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Measles</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Disease Rates</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Epidemics</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Medicine and Health</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Vaccination and Immunization</category>
+    </item>
+    <item>
+      <title>At the Center of Trump’s Vision for Rebuilding Ukraine: BlackRock</title>
+      <link>https://www.nytimes.com/2026/01/19/world/europe/ukraine-reconstruction-blackrock.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/world/europe/ukraine-reconstruction-blackrock.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/world/europe/ukraine-reconstruction-blackrock.html" rel="standout"></atom:link>
+      <description>The world’s largest asset manager has been enlisted to help build Ukraine’s recovery plan. Some fear it is part of a Trump administration effort to steer the effort toward American business interests.</description>
+      <dc:creator>Constant Méheut</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 10:02:00 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Russian Invasion of Ukraine (2022)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States International Relations</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Economic Conditions and Trends</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Infrastructure (Public Works)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Assets, Frozen</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Peace Process</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">BlackRock Inc</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Fink, Laurence D</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Kushner, Jared</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Trump, Donald J</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Zelensky, Volodymyr</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Europe</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Kyiv (Ukraine)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Moscow (Russia)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Russia</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Ukraine</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/19/multimedia/19int-ukraine-blackrock-vtpc/19int-ukraine-blackrock-vtpc-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Tyler Hicks/The New York Times</media:credit>
+      <media:description>Mezhova, in eastern Ukraine, in December. Ukrainian officials have likened their country’s recovery blueprint to the Marshall Plan, the U.S.-funded project to rebuild Europe after World War II.</media:description>
+    </item>
+    <item>
+      <title>The Rise of Prediction Markets</title>
+      <link>https://www.nytimes.com/2026/01/19/technology/polymarket-kalshi-prediction-markets.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/technology/polymarket-kalshi-prediction-markets.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/technology/polymarket-kalshi-prediction-markets.html" rel="standout"></atom:link>
+      <description>Billions of dollars are trading hands on sites like Polymarket and Kalshi, where people bet on everything from Taylor Swift’s wedding date to election outcomes.</description>
+      <dc:creator>David Yaffe-Bellany</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 10:01:04 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Gambling</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Virtual Currency</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Regulation and Deregulation of Industry</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Start-ups</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Computers and the Internet</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Polymarket (Adventure One QSS Inc)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Kalshi Inc</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Coplan, Shayne</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Innovation</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/19/business/00prediction-markets/00prediction-markets-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Mojo Wang</media:credit>
+    </item>
+    <item>
+      <title>Prominent Architecture Firm Is Accused of Illegally Ousting Employees</title>
+      <link>https://www.nytimes.com/2026/01/19/business/snohetta-nlrb-complaint.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/01/19/business/snohetta-nlrb-complaint.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/01/19/business/snohetta-nlrb-complaint.html" rel="standout"></atom:link>
+      <description>A federal labor regulator says the firm, Snohetta, laid off eight employees in retaliation for trying to unionize.</description>
+      <dc:creator>Noam Scheiber</dc:creator>
+      <pubDate>Mon, 19 Jan 2026 10:02:16 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Labor and Jobs</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Organized Labor</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Architecture</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Snohetta</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/01/16/multimedia/00biz-NLRB-architects-pbwk/00biz-NLRB-architects-pbwk-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Karsten Moran for The New York Times</media:credit>
+      <media:description>Snohetta designed interior spaces at the Summit One Vanderbilt observation complex in Manhattan. </media:description>
+    </item>
+  </channel>
+</rss>

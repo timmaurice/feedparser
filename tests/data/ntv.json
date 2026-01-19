@@ -1,0 +1,21 @@
+{
+  "has_images": true,
+  "has_unique_links": true,
+  "has_unique_titles": true,
+  "has_unique_dates": true,
+  "sensor_config": {
+    "name": "ntv",
+    "feed_url": "https://www.n-tv.de/23.rss",
+    "date_format": "%a, %d %b %Y %H:%M:%S",
+    "local_time": true,
+    "inclusions": [
+      "title",
+      "link",
+      "description",
+      "summary",
+      "image",
+      "published"
+    ]
+  },
+  "download_date": "2026-01-19T19:42:00+01:00"
+}

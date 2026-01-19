@@ -1,11 +1,17 @@
 {
   "domain": "feedparser",
-  "name": "Feedparser",
-  "codeowners": ["@iantrich", "@ogajduse"],
+  "name": "A better Feedparser",
+  "codeowners": ["@timmaurice"],
+  "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/timmaurice/feedparserblob/master/README.md",
+  "documentation": "https://github.com/timmaurice/feedparser/blob/master/README.md",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/timmaurice/feedparserissues",
-  "requirements": ["feedparser==6.0.11", "python-dateutil", "requests-file", "requests"],
-  "version": "0.1.11"
+  "issue_tracker": "https://github.com/timmaurice/feedparser/issues",
+  "requirements": [
+    "feedparser==6.0.11",
+    "python-dateutil",
+    "requests-file",
+    "requests"
+  ],
+  "version": "1.0.0"
 }

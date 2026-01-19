@@ -1,5 +1,6 @@
 {
-  "name": "Feedparser",
-  "homeassistant": "2021.4.0",
+  "name": "A better Feedparser",
+  "description": "A better RSS-Feedparser for Home Assistant",
+  "homeassistant": "2026.1.0",
   "render_readme": true
 }

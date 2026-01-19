@@ -1,4 +1,5 @@
-# sensor.feedparser
+# A better Feedparser
+
 RSS feed custom component for [Home Assistant](https://www.home-assistant.io/) which can be used in conjunction with the custom Lovelace [rss-accordion](https://github.com/timmaurice/lovelace-rss-accordion)
 
 [![GitHub Release][releases-shield]][releases]
@@ -11,6 +12,7 @@ RSS feed custom component for [Home Assistant](https://www.home-assistant.io/) w
 [![Community Forum][forum-shield]][forum]
 
 ## Installation
+
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 
 1. Open HACS Settings and add this repository (https://github.com/timmaurice/feedparser)
@@ -22,17 +24,23 @@ Alternatively, click on the button below to add the repository:
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?category=Integration&repository=feedparser&owner=timmaurice)
 
-
 ## Configuration
 
-**Example configuration.yaml:**
+### Via UI (Recommended)
+
+1. Go to **Settings > Devices & Services**.
+2. Click **Add Integration** and search for **"A better Feedparser"**.
+3. Enter the name and URL of your RSS feed.
+4. Once added, you can click **Configure** on the integration entry to adjust settings like date format, inclusions, and exclusions.
+
+### Via configuration.yaml (Legacy)
 
 ```yaml
 sensor:
   - platform: feedparser
     name: Engineering Feed
-    feed_url: 'https://www.sciencedaily.com/rss/matter_energy/engineering.xml'
-    date_format: '%a, %d %b %Y %H:%M:%S %Z'
+    feed_url: "https://www.sciencedaily.com/rss/matter_energy/engineering.xml"
+    date_format: "%a, %d %b %Y %H:%M:%S %Z"
     scan_interval:
       hours: 3
     inclusions:
@@ -60,31 +68,31 @@ Note that the original `pubDate` field is available under `published` attribute 
 
 **Configuration variables:**
 
-key | description
-:--- | :---
-**platform (Required)** | The platform name
-**name (Required)** | Name your feed
-**feed_url (Required)** | The RSS feed URL
-**date_format (Optional)** | strftime date format for date strings **Default** `%a, %b %d %I:%M %p`
-**local_time (Optional)** | Whether to convert date into local time **Default** false
-**show_topn (Optional)** | fetch how many entres from rss source，if not set then fetch all
-**inclusions (Optional)** | List of fields to include from populating the list
-**exclusions (Optional)** | List of fields to exclude from populating the list
-**scan_interval (Optional)** | Update interval in hours
+| key                          | description                                                            |
+| :--------------------------- | :--------------------------------------------------------------------- |
+| **platform (Required)**      | The platform name                                                      |
+| **name (Required)**          | Name your feed                                                         |
+| **feed_url (Required)**      | The RSS feed URL                                                       |
+| **date_format (Optional)**   | strftime date format for date strings **Default** `%a, %b %d %I:%M %p` |
+| **local_time (Optional)**    | Whether to convert date into local time **Default** false              |
+| **show_topn (Optional)**     | fetch how many entres from rss source，if not set then fetch all       |
+| **inclusions (Optional)**    | List of fields to include from populating the list                     |
+| **exclusions (Optional)**    | List of fields to exclude from populating the list                     |
+| **scan_interval (Optional)** | Update interval in hours                                               |
 
-***
+---
 
 Note: Will return all fields if no inclusions or exclusions are specified
 
 Due to how `custom_components` are loaded, it is normal to see a `ModuleNotFoundError` error on first boot after adding this, to resolve it, restart Home-Assistant.
 
-[commits-shield]: https://img.shields.io/github/commit-activity/y/timmaurice/feedparser.svg?style=for-the-badge
-[commits]: https://github.com/timmaurice/feedparsercommits/master
+[commits-shield]: https://img.shields.io/github/commit-activity/y/timmaurice/feedparser.svg?style=flat-square
+[commits]: https://github.com/timmaurice/feedparser/commits/master
 [discord]: https://discord.gg/Qa5fW2R
-[discord-shield]: https://img.shields.io/discord/330944238910963714.svg?style=for-the-badge
-[forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=for-the-badge
+[discord-shield]: https://img.shields.io/discord/330944238910963714.svg?style=flat-square
+[forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=flat-square
 [forum]: https://community.home-assistant.io/t/custom-component-rss-feed-parser/64637
-[license-shield]: https://img.shields.io/github/license/timmaurice/feedparser.svg?style=for-the-badge
-[maintenance-shield]: https://img.shields.io/badge/maintainer-Ondrej%20Gajdusek%20%40ogajduse-blue.svg?style=for-the-badge
-[releases-shield]: https://img.shields.io/github/release/timmaurice/feedparser.svg?style=for-the-badge
-[releases]: https://github.com/timmaurice/feedparserreleases
+[license-shield]: https://img.shields.io/github/license/timmaurice/feedparser.svg?style=flat-square
+[maintenance-shield]: https://img.shields.io/badge/maintainer-Tim%20Bayer%20%40timmaurice-blue.svg?style=flat-square
+[releases-shield]: https://img.shields.io/github/release/timmaurice/feedparser.svg?style=flat-square
+[releases]: https://github.com/timmaurice/feedparser/releases
