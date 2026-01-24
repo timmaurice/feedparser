@@ -1,4 +1,4 @@
-name: Release
+name: Create Release
 
 on:
   push:
@@ -7,22 +7,34 @@ on:
 
 jobs:
   release:
-    name: Create Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      # 1. Checkout code
+      - uses: actions/checkout@v4
 
-      - name: Zip component
+      # 2. Get version from tag
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      # 3. Create ZIP in repo root (only feedparser folder)
+      - name: Create zip archive for HACS
         run: |
           cd custom_components/feedparser
           zip -r ../../feedparser.zip .
-          cd ../..
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      # 4. Verify ZIP exists
+      - name: List files
+        run: ls -l feedparser.zip
+
+      # 5. Create GitHub Release and attach ZIP
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          files: feedparser.zip
+          tag_name: ${{ github.ref }}
+          name: "Version ${{ env.VERSION }}"
+          draft: true
           generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: feedparser.zip
