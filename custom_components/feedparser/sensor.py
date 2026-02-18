@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 __version__ = "1.0.0"
 
-USER_AGENT = f"Home Assistant Feed-parser Integration {__version__}"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -178,7 +178,18 @@ class FeedParserSensor(SensorEntity):
         _LOGGER.debug("Feed %s: Polling feed data from %s", self.name, self._feed)
         s: requests.Session = requests.Session()
         s.mount("file://", FileAdapter())
-        s.headers.update({"User-Agent": USER_AGENT})
+        headers = {
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1",
+        }
+        s.headers.update(headers)
         res: requests.Response = s.get(self._feed)
         res.raise_for_status()
         parsed_feed: FeedParserDict = feedparser.parse(res.content)
