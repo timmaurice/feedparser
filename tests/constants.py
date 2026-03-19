@@ -131,4 +131,3 @@ DEFAULT_INCLUSIONS = ["image", "title", "link", "summary", "published"]
 DATE_FORMAT = "%a, %d %b %Y %H:%M:%S UTC%z"
 
 URLS_HEADERS_REQUIRED = []
-

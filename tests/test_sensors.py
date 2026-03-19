@@ -2,7 +2,7 @@
 
 import re
 from contextlib import nullcontext, suppress
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from pathlib import Path
 
@@ -143,7 +143,9 @@ def test_update_sensor_entries_time(
 
     # get the time of the first entry
     first_entry_struct_time: time.struct_time = entry.published_parsed
-    first_entry_time: datetime = datetime(*first_entry_struct_time[:6], tzinfo=UTC)
+    first_entry_time: datetime = datetime(
+        *first_entry_struct_time[:6], tzinfo=timezone.utc
+    )
 
     # get the time of the first entry in the sensor
     first_sensor_entry_time: datetime = datetime.strptime(  # noqa: DTZ007
@@ -152,7 +154,7 @@ def test_update_sensor_entries_time(
     )
 
     if not first_sensor_entry_time.tzinfo:
-        first_sensor_entry_time = first_sensor_entry_time.replace(tzinfo=UTC)
+        first_sensor_entry_time = first_sensor_entry_time.replace(tzinfo=timezone.utc)
 
     # assert that the time of the first entry in the sensor is equal to
     # the time of the first entry in the feed
@@ -167,8 +169,6 @@ def test_check_duplicates(feed_sensor: FeedParserSensor) -> None:
     feed_sensor.update()
     after_second_update = len(feed_sensor.feed_entries)
     assert after_first_update == after_second_update
-
-
 
 
 def test_remove_summary_image(
