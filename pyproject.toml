@@ -1,6 +1,6 @@
 [project]
 name = "homeassistant.sensor.feedparser"
-version = "1.0.2"
+version = "1.0.3"
 description = "Home Assistant custom integration to parse RSS feeds"
 maintainers = [
   {name = "Tim Bayer", email = "mail@timbayer.de"},
@@ -157,7 +157,7 @@ filterwarnings = [
 ]
 
 [tool.bumpver]
-current_version = "1.0.2"
+current_version = "1.0.3"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "bump version {old_version} -> {new_version}"
 tag_message = "{new_version}"

@@ -7,6 +7,7 @@ import logging
 import re
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any
+from urllib.parse import urljoin
 
 import feedparser  # type: ignore[import]
 import homeassistant.helpers.config_validation as cv
@@ -40,7 +41,7 @@ if TYPE_CHECKING:
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
     from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
@@ -181,7 +182,7 @@ class FeedParserSensor(SensorEntity):
         s.mount("file://", FileAdapter())
         headers = {
             "User-Agent": USER_AGENT,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept": "*/*",
             "Accept-Language": "en-US,en;q=0.9",
             "Accept-Encoding": "gzip, deflate, br",
             "Sec-Fetch-Dest": "document",
@@ -258,8 +259,9 @@ class FeedParserSensor(SensorEntity):
                 parsed_date: datetime = self._parse_date(value)
                 sensor_entry[key] = parsed_date.strftime(self._date_format)
             elif key == "image":
-                sensor_entry["image"] = value.get("href")
-            elif isinstance(value, (str, int, float, bool)):
+                if href := value.get("href"):
+                    sensor_entry["image"] = urljoin(self._feed, href)
+            elif isinstance(value, (dict, list, str, int, float, bool)):
                 sensor_entry[key] = value
 
         if (
@@ -267,7 +269,7 @@ class FeedParserSensor(SensorEntity):
             and "image" not in sensor_entry
             and (image := self._process_image(feed_entry))
         ):
-            sensor_entry["image"] = image
+            sensor_entry["image"] = urljoin(self._feed, image)
         if (
             "audio" not in self._exclusions
             and "audio" not in sensor_entry
@@ -307,7 +309,7 @@ class FeedParserSensor(SensorEntity):
             if key in ["published", "updated", "created", "expired"]:
                 parsed_date: datetime = self._parse_date(value)
                 channel_info[key] = parsed_date.strftime(self._date_format)
-            elif isinstance(value, (str, int, float, bool)):
+            elif isinstance(value, (dict, list, str, int, float, bool)):
                 channel_info[key] = value
 
         if "image" not in self._exclusions:
@@ -318,7 +320,7 @@ class FeedParserSensor(SensorEntity):
             if not image_url and feed_info.get("logo"):
                 image_url = feed_info.logo
             if image_url:
-                channel_info["image"] = image_url
+                channel_info["image"] = urljoin(self._feed, image_url)
         _LOGGER.debug("Feed %s: Generated channel info: %s", self.name, channel_info)
         return channel_info
 
