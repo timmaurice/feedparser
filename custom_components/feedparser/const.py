@@ -12,7 +12,7 @@ CONF_EXCLUSIONS = "exclusions"
 CONF_SHOW_TOPN = "show_topn"
 CONF_REMOVE_SUMMARY_IMG = "remove_summary_image"
 
-DEFAULT_DATE_FORMAT = "%a, %b %d %I:%M %p"
+DEFAULT_DATE_FORMAT = "%a, %b %d %Y %I:%M %p"
 DEFAULT_SCAN_INTERVAL = timedelta(hours=1)
 DEFAULT_TOPN = 9999
 
