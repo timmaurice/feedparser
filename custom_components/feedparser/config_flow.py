@@ -30,12 +30,12 @@ _LOGGER = logging.getLogger(__name__)
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_NAME): cv.string,
-        vol.Required(CONF_FEED_URL): cv.string,
-        vol.Optional(CONF_DATE_FORMAT, default=DEFAULT_DATE_FORMAT): cv.string,
-        vol.Optional(CONF_SHOW_TOPN, default=DEFAULT_TOPN): cv.positive_int,
-        vol.Optional(CONF_LOCAL_TIME, default=False): cv.boolean,
-        vol.Optional(CONF_REMOVE_SUMMARY_IMG, default=False): cv.boolean,
+        vol.Required(CONF_NAME): str,
+        vol.Required(CONF_FEED_URL): str,
+        vol.Optional(CONF_DATE_FORMAT, default=DEFAULT_DATE_FORMAT): str,
+        vol.Optional(CONF_SHOW_TOPN, default=DEFAULT_TOPN): int,
+        vol.Optional(CONF_LOCAL_TIME, default=False): bool,
+        vol.Optional(CONF_REMOVE_SUMMARY_IMG, default=False): bool,
     }
 )
 
@@ -92,17 +92,13 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
-    ) -> FeedparserOptionsFlowHandler:
+    ) -> config_entries.OptionsFlow:
         """Get the options flow for this handler."""
-        return FeedparserOptionsFlowHandler(config_entry)
+        return FeedparserOptionsFlowHandler()
 
 
 class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle Feedparser options."""
-
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -117,8 +113,8 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
         def get_val(key, default):
             val = options.get(key, self.config_entry.data.get(key, default))
             if isinstance(val, list):
-                return ", ".join(val)
-            return val
+                return ", ".join([str(v) for v in val])
+            return val if val is not None else default
 
         return self.async_show_form(
             step_id="init",
@@ -127,23 +123,23 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Optional(
                         CONF_DATE_FORMAT,
                         default=get_val(CONF_DATE_FORMAT, DEFAULT_DATE_FORMAT),
-                    ): cv.string,
+                    ): str,
                     vol.Optional(
-                        CONF_SHOW_TOPN, default=get_val(CONF_SHOW_TOPN, DEFAULT_TOPN)
-                    ): cv.positive_int,
+                        CONF_SHOW_TOPN, default=int(get_val(CONF_SHOW_TOPN, DEFAULT_TOPN))
+                    ): int,
                     vol.Optional(
-                        CONF_LOCAL_TIME, default=get_val(CONF_LOCAL_TIME, False)
-                    ): cv.boolean,
+                        CONF_LOCAL_TIME, default=bool(get_val(CONF_LOCAL_TIME, False))
+                    ): bool,
                     vol.Optional(
                         CONF_REMOVE_SUMMARY_IMG,
-                        default=get_val(CONF_REMOVE_SUMMARY_IMG, False),
-                    ): cv.boolean,
+                        default=bool(get_val(CONF_REMOVE_SUMMARY_IMG, False)),
+                    ): bool,
                     vol.Optional(
-                        CONF_INCLUSIONS, default=get_val(CONF_INCLUSIONS, [])
-                    ): cv.string,  # Comma separated for UI simplicity
+                        CONF_INCLUSIONS, default=get_val(CONF_INCLUSIONS, "")
+                    ): str,  # Comma separated for UI simplicity
                     vol.Optional(
-                        CONF_EXCLUSIONS, default=get_val(CONF_EXCLUSIONS, [])
-                    ): cv.string,  # Comma separated for UI simplicity
+                        CONF_EXCLUSIONS, default=get_val(CONF_EXCLUSIONS, "")
+                    ): str,  # Comma separated for UI simplicity
                 }
             ),
         )
