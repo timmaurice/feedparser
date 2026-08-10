@@ -1,0 +1,15 @@
+name: feedparser-test
+services:
+  homeassistant:
+    container_name: ha-feedparser-test
+    image: homeassistant/home-assistant:stable
+    volumes:
+      - ./config:/config
+      # Mount the custom component directly into the container
+      - ./custom_components/feedparser:/config/custom_components/feedparser
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - '8137:8123'
