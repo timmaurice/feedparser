@@ -3,21 +3,20 @@
 from __future__ import annotations
 
 import logging
-import requests
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+import aiohttp
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
 )
 
+from .api import FeedparserAPI, FeedparserApiError
 from .const import (
     CONF_DATE_FORMAT,
     CONF_EXCLUSIONS,
@@ -33,6 +32,9 @@ from .const import (
     MAX_SCAN_INTERVAL_MINUTES,
     MIN_SCAN_INTERVAL_MINUTES,
 )
+
+if TYPE_CHECKING:
+    from homeassistant.data_entry_flow import FlowResult
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,7 +60,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         ): SCAN_INTERVAL_SELECTOR,
         vol.Optional(CONF_LOCAL_TIME, default=False): bool,
         vol.Optional(CONF_REMOVE_SUMMARY_IMG, default=False): bool,
-    }
+    },
 )
 
 
@@ -68,36 +70,16 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
+        self,
+        user_input: dict[str, Any] | None = None,
     ) -> FlowResult:
         """Handle the initial step."""
         errors: dict[str, str] = {}
         if user_input is not None:
             try:
-                # Basic validation: check if the URL is reachable
-                # Use a timeout to avoid hanging the UI
-                def validate_url():
-                    headers = {
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-                        "Accept-Language": "en-US,en;q=0.9",
-                        "Accept-Encoding": "gzip, deflate, br",
-                        "Sec-Fetch-Dest": "document",
-                        "Sec-Fetch-Mode": "navigate",
-                        "Sec-Fetch-Site": "same-origin",
-                        "Sec-Fetch-User": "?1",
-                        "Upgrade-Insecure-Requests": "1",
-                    }
-                    res = requests.get(
-                        user_input[CONF_FEED_URL],
-                        timeout=10,
-                        headers=headers,
-                    )
-                    res.raise_for_status()
-                    return res
-
-                await self.hass.async_add_executor_job(validate_url)
-            except Exception:  # pylint: disable=broad-except
+                # Basic validation: check that the feed is reachable
+                await FeedparserAPI(self.hass).async_fetch(user_input[CONF_FEED_URL])
+            except (FeedparserApiError, aiohttp.InvalidURL, ValueError):
                 errors["base"] = "cannot_connect"
             else:
                 await self.async_set_unique_id(user_input[CONF_FEED_URL])
@@ -107,11 +89,14 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES),
                 )
                 return self.async_create_entry(
-                    title=user_input[CONF_NAME], data=user_input
+                    title=user_input[CONF_NAME],
+                    data=user_input,
                 )
 
         return self.async_show_form(
-            step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
+            step_id="user",
+            data_schema=STEP_USER_DATA_SCHEMA,
+            errors=errors,
         )
 
     @staticmethod
@@ -127,7 +112,8 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle Feedparser options."""
 
     async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
+        self,
+        user_input: dict[str, Any] | None = None,
     ) -> FlowResult:
         """Manage the options."""
         if user_input is not None:
@@ -155,7 +141,8 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
                         default=get_val(CONF_DATE_FORMAT, DEFAULT_DATE_FORMAT),
                     ): str,
                     vol.Optional(
-                        CONF_SHOW_TOPN, default=int(get_val(CONF_SHOW_TOPN, DEFAULT_TOPN))
+                        CONF_SHOW_TOPN,
+                        default=int(get_val(CONF_SHOW_TOPN, DEFAULT_TOPN)),
                     ): int,
                     vol.Optional(
                         CONF_SCAN_INTERVAL,
@@ -164,18 +151,21 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
                         ),
                     ): SCAN_INTERVAL_SELECTOR,
                     vol.Optional(
-                        CONF_LOCAL_TIME, default=bool(get_val(CONF_LOCAL_TIME, False))
+                        CONF_LOCAL_TIME,
+                        default=bool(get_val(CONF_LOCAL_TIME, False)),
                     ): bool,
                     vol.Optional(
                         CONF_REMOVE_SUMMARY_IMG,
                         default=bool(get_val(CONF_REMOVE_SUMMARY_IMG, False)),
                     ): bool,
                     vol.Optional(
-                        CONF_INCLUSIONS, default=get_val(CONF_INCLUSIONS, "")
+                        CONF_INCLUSIONS,
+                        default=get_val(CONF_INCLUSIONS, ""),
                     ): str,  # Comma separated for UI simplicity
                     vol.Optional(
-                        CONF_EXCLUSIONS, default=get_val(CONF_EXCLUSIONS, "")
+                        CONF_EXCLUSIONS,
+                        default=get_val(CONF_EXCLUSIONS, ""),
                     ): str,  # Comma separated for UI simplicity
-                }
+                },
             ),
         )

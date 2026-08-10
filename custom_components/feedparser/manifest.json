@@ -1,7 +1,9 @@
 {
   "domain": "feedparser",
   "name": "A better Feedparser",
-  "codeowners": ["@timmaurice"],
+  "codeowners": [
+    "@timmaurice"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/timmaurice/feedparser/blob/master/README.md",
@@ -9,9 +11,7 @@
   "issue_tracker": "https://github.com/timmaurice/feedparser/issues",
   "requirements": [
     "feedparser==6.0.11",
-    "python-dateutil",
-    "requests-file",
-    "requests"
+    "python-dateutil"
   ],
   "version": "1.0.5"
 }

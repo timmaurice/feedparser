@@ -4,7 +4,7 @@ import pytest
 from constants import TEST_FEEDS
 from feedsource import FeedSource
 
-from custom_components.feedparser.sensor import FeedParserSensor
+from custom_components.feedparser.parser import FeedParserConfig, ParsedFeed, parse_feed
 
 
 def get_feeds() -> list[FeedSource]:
@@ -40,9 +40,9 @@ def feed(request: pytest.FixtureRequest) -> FeedSource:
 
 
 @pytest.fixture()
-def feed_sensor(feed: FeedSource) -> FeedParserSensor:
-    """Return feed sensor initialized with the local RSS feed."""
-    return FeedParserSensor(**feed.sensor_config_local_feed)
+def parsed_feed(feed: FeedSource) -> ParsedFeed:
+    """Return the local RSS feed parsed with its own configuration."""
+    return parse_local_feed(feed)
 
 
 @pytest.fixture()
@@ -51,3 +51,13 @@ def feed_with_image_in_summary(
 ) -> FeedSource:
     """Return feed sensor with images in summary of its entries."""
     return request.param
+
+
+def parse_local_feed(feed: FeedSource, **overrides: object) -> ParsedFeed:
+    """Parse a feed fixture from disk, optionally overriding config values."""
+    return parse_feed(feed.path.read_bytes(), local_feed_config(feed, **overrides))
+
+
+def local_feed_config(feed: FeedSource, **overrides: object) -> FeedParserConfig:
+    """Build a FeedParserConfig pointing at the local feed fixture."""
+    return FeedParserConfig(**(feed.parser_config_local_feed | overrides))  # type: ignore[arg-type]

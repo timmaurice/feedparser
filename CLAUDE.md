@@ -11,8 +11,19 @@ The integration supports both UI configuration (config flow, recommended) and le
 - **Libraries:**
   - `feedparser` for RSS/Atom parsing
   - `python-dateutil` for tolerant date parsing
-  - `requests` / `requests-file` for fetching feeds (also supports `file://` URLs, used by
-    the test suite)
+  - `aiohttp` via Home Assistant's shared client session for fetching feeds
+
+## Module Layout
+
+| Module | Responsibility |
+| --- | --- |
+| `api.py` | Fetching only. `FeedparserAPI.async_fetch()` returns raw bytes, over HTTP(S) via `async_get_clientsession` or from a `file://` URL in the executor. Raises `FeedparserApiError`. |
+| `parser.py` | Pure parsing. `parse_feed(content, FeedParserConfig) -> ParsedFeed`. No network, no config entries — this is what the test suite exercises directly. |
+| `coordinator.py` | `FeedparserCoordinator` (a `DataUpdateCoordinator`) ties the two together and owns the polling interval. `build_coordinator(hass, entry)` maps a config entry onto it. |
+| `sensor.py` | `FeedParserSensor`, a `CoordinatorEntity`. Holds no fetch or parse logic. Also carries the legacy YAML `PLATFORM_SCHEMA`. |
+| `config_flow.py` | UI setup and options. Validates the feed URL through `api.py`. |
+
+Feeds are polled by the coordinator's `update_interval`; the entity does not poll itself. Parsing runs in the executor because it is CPU-bound on large feeds.
 
 ## Building and Running
 

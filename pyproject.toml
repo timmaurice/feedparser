@@ -3,7 +3,7 @@ name = "homeassistant.sensor.feedparser"
 version = "1.0.5"
 description = "Home Assistant custom integration to parse RSS feeds"
 maintainers = [
-  {name = "Tim Bayer", email = "mail@timbayer.de"},
+  {name = "Tim Bayer", email = "mail@timbayer.de"}
 ]
 keywords = [
   "homeassistant",
@@ -25,9 +25,7 @@ requires-python = ">=3.11.0"
 dependencies = [
   "feedparser==6.0.11",
   "homeassistant",
-  "python-dateutil",
-  "requests-file",
-  "requests"
+  "python-dateutil"
 ]
 
 [project.optional-dependencies]
