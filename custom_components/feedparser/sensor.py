@@ -17,6 +17,7 @@ from dateutil import parser
 from feedparser import FeedParserDict
 from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
 from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
+from homeassistant.helpers import entity_platform
 from homeassistant.util import dt
 from requests_file import FileAdapter
 
@@ -30,9 +31,12 @@ from .const import (
     CONF_SHOW_TOPN,
     DEFAULT_DATE_FORMAT,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL_MINUTES,
     DEFAULT_TOPN,
     DOMAIN,
     IMAGE_REGEX,
+    MAX_SCAN_INTERVAL_MINUTES,
+    MIN_SCAN_INTERVAL_MINUTES,
 )
 
 if TYPE_CHECKING:
@@ -87,6 +91,21 @@ async def async_setup_platform(
     )
 
 
+def _scan_interval_from_minutes(value: str | int | float | None) -> timedelta:
+    """Convert a stored scan interval in minutes into a timedelta."""
+    try:
+        minutes = int(float(value))
+    except (TypeError, ValueError):
+        _LOGGER.warning(
+            "Invalid scan interval %s, falling back to %s minutes",
+            value,
+            DEFAULT_SCAN_INTERVAL_MINUTES,
+        )
+        minutes = DEFAULT_SCAN_INTERVAL_MINUTES
+    minutes = min(max(minutes, MIN_SCAN_INTERVAL_MINUTES), MAX_SCAN_INTERVAL_MINUTES)
+    return timedelta(minutes=minutes)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -106,6 +125,13 @@ async def async_setup_entry(
             return [x.strip() for x in val.split(",") if x.strip()]
         return val
 
+    scan_interval = _scan_interval_from_minutes(
+        get_val(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES),
+    )
+    # Each config entry gets its own entity platform, so the polling interval
+    # can be set per feed. It is picked up when the entity is added below.
+    entity_platform.async_get_current_platform().scan_interval = scan_interval
+
     async_add_entities(
         [
             FeedParserSensor(
@@ -116,9 +142,7 @@ async def async_setup_entry(
                 remove_summary_image=get_val(CONF_REMOVE_SUMMARY_IMG, False),
                 inclusions=to_list(get_val(CONF_INCLUSIONS, [])),
                 exclusions=to_list(get_val(CONF_EXCLUSIONS, [])),
-                scan_interval=timedelta(
-                    hours=1
-                ),  # Default, though entries handle their own polling usually
+                scan_interval=scan_interval,
                 local_time=get_val(CONF_LOCAL_TIME, False),
                 entry_id=entry.entry_id,
             ),

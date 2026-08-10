@@ -12,6 +12,11 @@ from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+)
 
 from .const import (
     CONF_DATE_FORMAT,
@@ -22,11 +27,24 @@ from .const import (
     CONF_REMOVE_SUMMARY_IMG,
     CONF_SHOW_TOPN,
     DEFAULT_DATE_FORMAT,
+    DEFAULT_SCAN_INTERVAL_MINUTES,
     DEFAULT_TOPN,
     DOMAIN,
+    MAX_SCAN_INTERVAL_MINUTES,
+    MIN_SCAN_INTERVAL_MINUTES,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+SCAN_INTERVAL_SELECTOR = NumberSelector(
+    NumberSelectorConfig(
+        min=MIN_SCAN_INTERVAL_MINUTES,
+        max=MAX_SCAN_INTERVAL_MINUTES,
+        step=1,
+        mode=NumberSelectorMode.BOX,
+        unit_of_measurement="min",
+    ),
+)
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -34,6 +52,10 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_FEED_URL): str,
         vol.Optional(CONF_DATE_FORMAT, default=DEFAULT_DATE_FORMAT): str,
         vol.Optional(CONF_SHOW_TOPN, default=DEFAULT_TOPN): int,
+        vol.Optional(
+            CONF_SCAN_INTERVAL,
+            default=DEFAULT_SCAN_INTERVAL_MINUTES,
+        ): SCAN_INTERVAL_SELECTOR,
         vol.Optional(CONF_LOCAL_TIME, default=False): bool,
         vol.Optional(CONF_REMOVE_SUMMARY_IMG, default=False): bool,
     }
@@ -80,6 +102,10 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 await self.async_set_unique_id(user_input[CONF_FEED_URL])
                 self._abort_if_unique_id_configured()
+                # The number selector hands back a float, store whole minutes.
+                user_input[CONF_SCAN_INTERVAL] = int(
+                    user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES),
+                )
                 return self.async_create_entry(
                     title=user_input[CONF_NAME], data=user_input
                 )
@@ -105,6 +131,10 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Manage the options."""
         if user_input is not None:
+            # The number selector hands back a float, store whole minutes.
+            user_input[CONF_SCAN_INTERVAL] = int(
+                user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES),
+            )
             return self.async_create_entry(title="", data=user_input)
 
         options = self.config_entry.options
@@ -127,6 +157,12 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Optional(
                         CONF_SHOW_TOPN, default=int(get_val(CONF_SHOW_TOPN, DEFAULT_TOPN))
                     ): int,
+                    vol.Optional(
+                        CONF_SCAN_INTERVAL,
+                        default=int(
+                            get_val(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES),
+                        ),
+                    ): SCAN_INTERVAL_SELECTOR,
                     vol.Optional(
                         CONF_LOCAL_TIME, default=bool(get_val(CONF_LOCAL_TIME, False))
                     ): bool,

@@ -2,7 +2,7 @@
 
 import re
 from contextlib import nullcontext, suppress
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 from pathlib import Path
 
@@ -13,8 +13,12 @@ from feedsource import FeedSource
 
 from custom_components.feedparser.sensor import (
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL_MINUTES,
     IMAGE_REGEX,
+    MAX_SCAN_INTERVAL_MINUTES,
+    MIN_SCAN_INTERVAL_MINUTES,
     FeedParserSensor,
+    _scan_interval_from_minutes,
 )
 
 if TYPE_CHECKING:
@@ -233,3 +237,21 @@ def test_media_thumbnail_support() -> None:
 
     # Check the first image url
     assert feed_sensor.feed_entries[0]["image"].startswith("https://")
+
+
+@pytest.mark.parametrize(
+    ("value", "expected_minutes"),
+    [
+        (5, 5),
+        ("15", 15),
+        (60.0, 60),  # the UI number selector returns floats
+        (0, MIN_SCAN_INTERVAL_MINUTES),  # too small, clamped
+        (-10, MIN_SCAN_INTERVAL_MINUTES),
+        (999999, MAX_SCAN_INTERVAL_MINUTES),  # too large, clamped
+        (None, DEFAULT_SCAN_INTERVAL_MINUTES),  # unparsable, falls back
+        ("nonsense", DEFAULT_SCAN_INTERVAL_MINUTES),
+    ],
+)
+def test_scan_interval_from_minutes(value: object, expected_minutes: int) -> None:
+    """Test conversion of the UI scan interval into a timedelta."""
+    assert _scan_interval_from_minutes(value) == timedelta(minutes=expected_minutes)

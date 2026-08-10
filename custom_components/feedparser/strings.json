@@ -8,8 +8,12 @@
           "feed_url": "Feed URL",
           "date_format": "Date format",
           "show_topn": "Show top N entries",
+          "scan_interval": "Update interval (minutes)",
           "local_time": "Use local time",
           "remove_summary_image": "Remove image from summary"
+        },
+        "data_description": {
+          "scan_interval": "How often the feed is fetched. Default is 60 minutes."
         }
       }
     },
@@ -29,10 +33,14 @@
         "data": {
           "date_format": "Date format",
           "show_topn": "Show top N entries",
+          "scan_interval": "Update interval (minutes)",
           "local_time": "Use local time",
           "remove_summary_image": "Remove image from summary",
           "inclusions": "Inclusions (comma separated)",
           "exclusions": "Exclusions (comma separated)"
+        },
+        "data_description": {
+          "scan_interval": "How often the feed is fetched. Default is 60 minutes."
         }
       }
     }

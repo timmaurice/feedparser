@@ -32,7 +32,9 @@ Alternatively, click on the button below to add the repository:
 1. Go to **Settings > Devices & Services**.
 2. Click **Add Integration** and search for **"A better Feedparser"**.
 3. Enter the name and URL of your RSS feed.
-4. Once added, you can click **Configure** on the integration entry to adjust settings like date format, inclusions, and exclusions.
+4. Once added, you can click **Configure** on the integration entry to adjust settings like the update interval, date format, inclusions, and exclusions.
+
+The **Update interval** is set in minutes and applies per feed, so a feed that changes every few minutes and one that changes every few hours can be polled at different rates. It defaults to 60 minutes. Feeds added before this option existed keep polling at the 60 minute default until you change it.
 
 ### Via configuration.yaml (Legacy)
 
