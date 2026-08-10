@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
     from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
-__version__ = "1.0.5"
+__version__ = "1.1.0"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
