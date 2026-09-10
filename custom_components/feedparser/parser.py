@@ -28,6 +28,7 @@ from .const import (
     TRUNCATION_SUFFIX,
     UNTRUNCATED_KEYS,
 )
+from .sanitize import safe_url, sanitize_mapping
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -301,6 +302,23 @@ def _warn_if_oversized(
         _OVERSIZED_WARNED.pop(feed_key, None)
 
 
+def _resolve_url(url: str | None, config: FeedParserConfig) -> str:
+    """Resolve a feed URL against the feed and drop it if it is not one.
+
+    `link`, `image` and `audio` are rendered as an `href` or a `src`, so a
+    `javascript:` or `data:` URL in one of them is the same hole as a script in
+    the summary. The check runs before the value is joined with the feed URL:
+    joining turns anything the scheme allow-list would reject into a relative
+    path under the feed's host, which hides the value the feed actually sent.
+    """
+    if not url:
+        return ""
+    safe = safe_url(url)
+    if not safe:
+        return ""
+    return urljoin(config.feed_url, safe)
+
+
 def generate_sensor_entry(
     feed_entry: FeedParserDict,
     config: FeedParserConfig,
@@ -317,8 +335,8 @@ def generate_sensor_entry(
                 continue
             sensor_entry[key] = parsed_date.strftime(config.date_format)
         elif key == "image":
-            if href := value.get("href"):
-                sensor_entry["image"] = urljoin(config.feed_url, href)
+            if resolved := _resolve_url(value.get("href"), config):
+                sensor_entry["image"] = resolved
         elif isinstance(value, (dict, list, str, int, float, bool)):
             sensor_entry[key] = value
 
@@ -329,21 +347,24 @@ def generate_sensor_entry(
     if (
         not _is_filtered("image", config)
         and "image" not in sensor_entry
-        and (image := process_image(feed_entry, config))
+        and (image := _resolve_url(process_image(feed_entry, config), config))
     ):
-        sensor_entry["image"] = urljoin(config.feed_url, image)
+        sensor_entry["image"] = image
     if (
         not _is_filtered("audio", config)
         and "audio" not in sensor_entry
-        and (audio := process_audio(feed_entry, config))
+        and (audio := _resolve_url(process_audio(feed_entry, config), config))
     ):
         sensor_entry["audio"] = audio
     if (
         not _is_filtered("link", config)
         and "link" not in sensor_entry
-        and (processed_link := process_link(feed_entry, config))
+        and (processed_link := _resolve_url(process_link(feed_entry, config), config))
     ):
         sensor_entry["link"] = processed_link
+    # Before `remove_summary_image` and the truncation, so both work on the
+    # markup the sensor actually exposes rather than on what the feed sent.
+    sensor_entry = sanitize_mapping(sensor_entry)
     if config.remove_summary_image and "summary" in sensor_entry:
         sensor_entry["summary"] = re.sub(IMAGE_REGEX, "", sensor_entry["summary"])
     sensor_entry = _truncate_entry(sensor_entry, config)
@@ -376,8 +397,9 @@ def generate_channel_info(
         ).get("url")
         if not image_url and feed_info.get("logo"):
             image_url = feed_info.logo
-        if image_url:
-            channel_info["image"] = urljoin(config.feed_url, image_url)
+        if resolved := _resolve_url(image_url, config):
+            channel_info["image"] = resolved
+    channel_info = sanitize_mapping(channel_info)
     channel_info = _truncate_entry(channel_info, config)
     _LOGGER.debug("Feed %s: Generated channel info: %s", config.name, channel_info)
     return channel_info

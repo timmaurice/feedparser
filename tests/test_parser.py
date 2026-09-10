@@ -148,43 +148,6 @@ def test_show_topn_still_overrides_the_default() -> None:
     assert parsed.native_value == EXPECTED_OVERRIDE_ENTRIES
 
 
-HOSTILE_SUMMARY = (
-    "&lt;p&gt;Real text."
-    "&lt;script&gt;alert(1)&lt;/script&gt;"
-    "&lt;img src='x' onerror='steal()'&gt;"
-    '&lt;a href="javascript:evil()"&gt;click&lt;/a&gt;'
-    "&lt;/p&gt;"
-)
-FEED_WITH_HOSTILE_HTML = f"""<?xml version="1.0"?>
-<rss version="2.0"><channel>
-  <title>Hostile</title>
-  <item><title>Nasty</title><description>{HOSTILE_SUMMARY}</description></item>
-</channel></rss>
-"""
-
-
-def test_html_in_a_summary_arrives_sanitised() -> None:
-    """Test the sanitisation the integration relies on and documents.
-
-    The summary is passed through as HTML and the rss-accordion card renders it
-    with `unsafeHTML`, so the allow-list feedparser applies (`SANITIZE_HTML`,
-    on by default) is a contract of this integration rather than an
-    implementation detail of the library. This test is what says so out loud:
-    if a future feedparser stops stripping these, it fails here instead of in
-    somebody's dashboard.
-    """
-    parsed = parse_feed(
-        FEED_WITH_HOSTILE_HTML,
-        zeit_verbrechen_config(max_text_length=NO_TEXT_LIMIT),
-    )
-    summary = parsed.entries[0]["summary"]
-    assert "Real text." in summary
-    assert "<script" not in summary
-    assert "alert(1)" not in summary
-    assert "onerror" not in summary
-    assert "javascript:" not in summary
-
-
 # Variants of one `<img>` that the regex has to see. feedparser normalises the
 # markup it keeps, which is why these are pinned against the pattern itself
 # rather than through a feed: the parsed summary would never show them, and the

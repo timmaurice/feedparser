@@ -114,13 +114,26 @@ upgrade and keep filtering exactly as they did.
 
 `summary`, `content` and `subtitle` keep the publisher's HTML — that is what
 the [rss-accordion](https://github.com/timmaurice/lovelace-rss-accordion) card
-renders, with `unsafeHTML`. The markup has been through `feedparser`'s own
-sanitiser first (`SANITIZE_HTML`, on by default), which applies an allow-list:
-`<script>` and `<style>` elements, event handler attributes such as `onerror`
-and `javascript:` URLs are stripped before the integration ever sees the value.
-This integration does not sanitise on top of that, so the allow-list is part of
-the contract here and there is a test pinning it. Anything reading these
-attributes should still treat them as untrusted publisher content.
+renders, with `unsafeHTML`. Every value the sensor exposes is run through an
+allow-list first: `<script>` and `<style>` elements, event handler attributes
+such as `onerror` and `javascript:` URLs are removed, from `summary`,
+`content` and `subtitle` as well as from `title`, `author` and the feed level
+values in `channel`.
+
+`feedparser` applies that allow-list on its own, but only to values a feed
+declares as HTML. An Atom `<summary type="text">`, an RSS `<title>` and an
+`<author>` are declared as plain text, and their escaped markup was unescaped
+and passed on live. The integration therefore sanitises its own output rather
+than relying on the library's `SANITIZE_HTML` flag — which is a process-wide
+global anything else in Home Assistant can switch off. `tests/test_sanitize.py`
+pins this per feed dialect, including with that flag turned off.
+
+The `link`, `image` and `audio` URLs are rendered as an `href` or a `src`, so
+they are checked against the same scheme allow-list: a `javascript:` or `data:`
+URL is dropped rather than handed to the card.
+
+None of this makes the markup trustworthy. It is publisher content that ends up
+in a dashboard, and anything reading these attributes should treat it as such.
 
 ### Entities, devices and diagnostics
 
