@@ -108,7 +108,7 @@ def as_field_list(value: object) -> list[str]:
     """
     if isinstance(value, str):
         return [field.strip() for field in value.split(",") if field.strip()]
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list | tuple):
         return [str(field).strip() for field in value if str(field).strip()]
     return []
 

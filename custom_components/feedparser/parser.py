@@ -351,7 +351,7 @@ def generate_sensor_entry(
         elif key == "image":
             if resolved := _resolve_url(value.get("href"), config):
                 sensor_entry["image"] = resolved
-        elif isinstance(value, (dict, list, str, int, float, bool)):
+        elif isinstance(value, dict | list | str | int | float | bool):
             sensor_entry[key] = value
 
     # `image`, `audio` and `link` are derived rather than copied, so they have
@@ -401,7 +401,7 @@ def generate_channel_info(
             if parsed_channel_date is None:
                 continue
             channel_info[key] = parsed_channel_date.strftime(config.date_format)
-        elif isinstance(value, (dict, list, str, int, float, bool)):
+        elif isinstance(value, dict | list | str | int | float | bool):
             channel_info[key] = value
 
     if not _is_filtered("image", config):

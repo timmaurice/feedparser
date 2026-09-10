@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from contextlib import nullcontext, suppress
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -13,7 +13,6 @@ import feedparser
 import pytest
 from conftest import local_feed_config, parse_local_feed
 from constants import DATE_FORMAT
-from feedsource import FeedSource
 
 from custom_components.feedparser.const import (
     DEFAULT_MAX_TEXT_LENGTH,
@@ -38,6 +37,8 @@ from custom_components.feedparser.parser import (
 
 if TYPE_CHECKING:
     import time
+
+    from feedsource import FeedSource
 
 
 @pytest.fixture(autouse=True)
