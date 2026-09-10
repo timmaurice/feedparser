@@ -1,0 +1,50 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "RSS-Feed hinzufügen",
+        "data": {
+          "name": "Name",
+          "feed_url": "Feed-URL",
+          "date_format": "Datumsformat",
+          "show_topn": "Anzahl der angezeigten Einträge",
+          "scan_interval": "Aktualisierungsintervall (Minuten)",
+          "local_time": "Lokale Zeit verwenden",
+          "remove_summary_image": "Bild aus der Zusammenfassung entfernen"
+        },
+        "data_description": {
+          "scan_interval": "Wie oft der Feed abgerufen wird. Standard sind 60 Minuten."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung fehlgeschlagen",
+      "invalid_auth": "Ungültige Authentifizierung",
+      "unknown": "Unerwarteter Fehler"
+    },
+    "abort": {
+      "already_configured": "Dieser Feed ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optionen für Feedparser",
+        "data": {
+          "date_format": "Datumsformat",
+          "show_topn": "Anzahl der angezeigten Einträge",
+          "max_text_length": "Maximale Textlänge (Zeichen)",
+          "scan_interval": "Aktualisierungsintervall (Minuten)",
+          "local_time": "Lokale Zeit verwenden",
+          "remove_summary_image": "Bild aus der Zusammenfassung entfernen",
+          "inclusions": "Eingeschlossene Felder (kommagetrennt)",
+          "exclusions": "Ausgeschlossene Felder (kommagetrennt)"
+        },
+        "data_description": {
+          "scan_interval": "Wie oft der Feed abgerufen wird. Standard sind 60 Minuten.",
+          "max_text_length": "Lange Texte wie die Zusammenfassung werden auf so viele Zeichen gekürzt. Standard sind 250 Zeichen; mit 0 bleibt der vollständige Text erhalten."
+        }
+      }
+    }
+  }
+}
