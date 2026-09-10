@@ -263,6 +263,25 @@ def options_flow_for(entry: FakeConfigEntry) -> FeedparserOptionsFlowHandler:
     return flow
 
 
+def test_the_options_flow_lets_the_core_supply_the_entry() -> None:
+    """Test that the options flow neither takes nor stores a config entry.
+
+    From Home Assistant 2026.1 - the core `hacs.json` requires - `config_entry`
+    on an options flow is a read-only property that resolves the entry from
+    `hass` via the flow's handler id. The older pattern, where
+    `async_get_options_flow` passes the entry in and `__init__` assigns
+    `self.config_entry`, raises AttributeError against that property and takes
+    the options form down. Both halves of the contract are pinned here because
+    the suite runs against a core old enough that the broken pattern still
+    works, so nothing else would notice it coming back.
+    """
+    entry = FakeConfigEntry({"feed_url": "https://example.com"})
+    flow = FeedparserConfigFlow.async_get_options_flow(entry)  # type: ignore[arg-type]
+    assert isinstance(flow, FeedparserOptionsFlowHandler)
+    assert "__init__" not in vars(FeedparserOptionsFlowHandler)
+    assert "config_entry" not in vars(FeedparserOptionsFlowHandler)
+
+
 def schema_of(flow: FeedparserOptionsFlowHandler) -> vol.Schema:
     """Return the schema the options form is built from."""
     data_schema = asyncio.run(flow.async_step_init())["data_schema"]
