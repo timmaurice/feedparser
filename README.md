@@ -141,9 +141,23 @@ Each feed added through the UI gets a device of its own, named after the feed
 and linking to the feed URL, with the sensor as its single entity. The entity
 keeps the name and the entity id it already had.
 
-YAML feeds now have a stable unique id as well (derived from the feed URL and
-the name), so they show up in the entity registry and can be renamed, hidden or
-assigned to an area like any other entity. They keep their entity id.
+YAML feeds now have a stable unique id as well, so they show up in the entity
+registry and can be renamed, hidden or assigned to an area like any other
+entity. As long as you leave `name` and `feed_url` alone, the sensor keeps the
+entity id it has always had, along with the area, icon and name you gave it.
+
+The id is derived from `feed_url` **and** `name`, because two YAML sensors may
+watch the same feed under different names and a shared unique id would make
+Home Assistant drop the second one. The price is that editing either of them
+is a new identity: the renamed sensor comes up as a new entity — with a new
+entity id, and without the area, icon or rename you had set — while the old
+registry entry stays behind as an unavailable one holding the old entity id.
+The same is true of a feed you remove from `configuration.yaml`. Delete the
+leftover entry under **Settings > Devices & Services > Entities**; nothing else
+is needed, and the old entity's recorder history stays with it.
+
+If you want a rename to keep the sensor's identity, use a UI entry instead:
+those are identified by the config entry, so their name is free to change.
 
 A **Download diagnostics** button on the config entry reports the settings in
 effect, whether the last poll succeeded, how many entries and which keys came

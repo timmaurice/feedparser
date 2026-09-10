@@ -77,6 +77,17 @@ def yaml_unique_id(config: FeedParserConfig) -> str:
     unique_id would make Home Assistant drop the second entity. The name is
     part of the hash for that reason, and the id is derived rather than stored
     so it comes out the same on every restart.
+
+    That makes the identity of a YAML sensor depend on two values a user may
+    edit. Changing either mints a new one: the sensor comes up as a new entity
+    and the registry keeps the old row, unavailable, holding the old entity id.
+    Dropping the name from the hash would trade that for a hard failure - Home
+    Assistant refuses the second entity of a colliding pair outright - so the
+    trade is deliberate and the README says so. There is nothing to migrate
+    here: the old name is not knowable from the new configuration, and YAML
+    sensors had no unique_id at all before, where a rename changed the entity
+    id just the same. A feed whose name is expected to change belongs in a UI
+    entry, which is identified by its config entry.
     """
     fingerprint = f"{config.feed_url}\n{config.name}".encode()
     return f"yaml_{hashlib.sha256(fingerprint).hexdigest()[:16]}"

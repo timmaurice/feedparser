@@ -205,3 +205,17 @@ def test_redact_url_keeps_a_readable_path_readable() -> None:
         "https://www1.wdr.de/mediathek/audio/wdr-aktuell-news/wdr-aktuell-152.podcast",
     ):
         assert redact_url(url) == url
+
+
+def test_a_renamed_yaml_feed_is_a_new_entity() -> None:
+    """Test the documented price of putting the name in the YAML unique id.
+
+    The name is hashed so that two sensors on one feed do not collide, which
+    means editing `name` or `feed_url` mints a new identity rather than
+    renaming the entity in place. That is what the README tells users, and this
+    is what would notice if the id quietly started ignoring one of them.
+    """
+    original = yaml_unique_id(parser_config(name="one"))
+    assert yaml_unique_id(parser_config(name="two")) != original
+    assert yaml_unique_id(parser_config(feed_url="https://ex.com/f.xml")) != original
+    assert yaml_unique_id(parser_config(name="one")) == original
