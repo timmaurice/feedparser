@@ -4,8 +4,12 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
+      # tests/data holds recorded upstream feed payloads. Whitespace inside a
+      # text node is content for a feed parser, so they stay byte-faithful.
       - id: trailing-whitespace
+        exclude: ^tests/data/
       - id: end-of-file-fixer
+        exclude: ^tests/data/
       - id: check-yaml
         exclude: ^test_hass/configuration.yaml$
       - id: check-toml
@@ -14,6 +18,10 @@ repos:
     rev: v1.0.0
     hooks:
       - id: format-xmllint
+        # tests/data holds recorded upstream feed payloads. Reformatting them
+        # rewrites whitespace inside text nodes and re-escapes characters, which
+        # changes what feedparser returns, so they stay byte-faithful.
+        exclude: ^tests/data/
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
     rev: v2.12.0
     hooks:
