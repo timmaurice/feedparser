@@ -22,8 +22,10 @@ repos:
         # rewrites whitespace inside text nodes and re-escapes characters, which
         # changes what feedparser returns, so they stay byte-faithful.
         exclude: ^tests/data/
+  # v2.14.0 is the first release that stopped importing pkg_resources, which
+  # setuptools 82 removed - v2.12.0 cannot start at all on a current setuptools.
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.12.0
+    rev: v2.16.0
     hooks:
       - id: pretty-format-toml
         args: ["--autofix", "--no-sort"]

@@ -1,0 +1,85 @@
+# Ruff's own configuration lives here rather than in pyproject.toml.
+#
+# validate-pyproject checks [tool.*] tables against schemas from
+# validate-pyproject-schema-store, which always resolves to its newest
+# release, while the ruff hook is pinned to v0.0.278. The two disagree:
+# `TCH` is the only spelling this ruff accepts and `TC` the only spelling
+# the current schema accepts, so the config could not satisfy both. Keeping
+# ruff's settings out of pyproject.toml leaves validate-pyproject to check
+# our packaging metadata and stops a third-party schema release from
+# failing CI on a repo that changed nothing.
+
+# Enable the pycodestyle (`E`) and Pyflakes (`F`) rules by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+select = [
+  "ANN",
+  "ARG",
+  "ARG",
+  "B",
+  "C",
+  "COM",
+  "D",
+  "D",
+  "DTZ",
+  "E",
+  "EM",
+  "F",
+  "FBT",
+  "FBT",
+  "I",
+  "PGH",
+  "PL",
+  "PLR",
+  "PT",
+  "RET",
+  "RUF",
+  "SIM",
+  "SLF",
+  "TCH",
+  "TRY",
+  "UP"
+]
+# Q000,ANN,PT009,D,E501,
+ignore = [
+  "D107",  # Missing docstring in __init__
+  "FBT001",  # Boolean positional arg in function definition
+  "D203",  # 1 blank line required before class docstring
+  "D213",  # Multi-line docstring summary should start at the first line
+  "FBT001"  # Boolean positional argument in function definition
+]
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+# Exclude a variety of commonly ignored directories.
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".mypy_cache",
+  ".pytype",
+  ".ruff_cache",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "venv"
+]
+# Same as Black.
+line-length = 88
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+# Assume Python 3.11.
+target-version = "py311"
+
+[per-file-ignores]
+"tests/**" = ["S101"]
+
+[pylint]
+max-args = 10
