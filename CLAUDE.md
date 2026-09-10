@@ -24,6 +24,8 @@ The integration supports both UI configuration (config flow, recommended) and le
 | `config_flow.py` | UI setup and options. Validates that the URL is reachable through `api.py` and that the response parses as a feed. |
 | `diagnostics.py` | `async_get_config_entry_diagnostics` — settings, last poll result and attribute size for a config entry. Reports keys, never entry text; redacts the feed URL's query string and userinfo. |
 
+HTML in `summary`/`content`/`subtitle` is passed through as it arrives from `feedparser`, which sanitises it against its own allow-list (`SANITIZE_HTML`, on by default: no `<script>`/`<style>`, no event handler attributes, no `javascript:` URLs). The integration adds no sanitising of its own, so that allow-list is a documented contract and `tests/test_parser.py::test_html_in_a_summary_arrives_sanitised` pins it. `IMAGE_REGEX` is a regex, not an HTML parser — it is only ever applied to markup feedparser has already normalised.
+
 Feeds are polled by the coordinator's `update_interval`; the entity does not poll itself. Parsing runs in the executor because it is CPU-bound on large feeds.
 
 ## Building and Running

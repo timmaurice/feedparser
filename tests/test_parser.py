@@ -148,6 +148,66 @@ def test_show_topn_still_overrides_the_default() -> None:
     assert parsed.native_value == EXPECTED_OVERRIDE_ENTRIES
 
 
+HOSTILE_SUMMARY = (
+    "&lt;p&gt;Real text."
+    "&lt;script&gt;alert(1)&lt;/script&gt;"
+    "&lt;img src='x' onerror='steal()'&gt;"
+    '&lt;a href="javascript:evil()"&gt;click&lt;/a&gt;'
+    "&lt;/p&gt;"
+)
+FEED_WITH_HOSTILE_HTML = f"""<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <title>Hostile</title>
+  <item><title>Nasty</title><description>{HOSTILE_SUMMARY}</description></item>
+</channel></rss>
+"""
+
+
+def test_html_in_a_summary_arrives_sanitised() -> None:
+    """Test the sanitisation the integration relies on and documents.
+
+    The summary is passed through as HTML and the rss-accordion card renders it
+    with `unsafeHTML`, so the allow-list feedparser applies (`SANITIZE_HTML`,
+    on by default) is a contract of this integration rather than an
+    implementation detail of the library. This test is what says so out loud:
+    if a future feedparser stops stripping these, it fails here instead of in
+    somebody's dashboard.
+    """
+    parsed = parse_feed(
+        FEED_WITH_HOSTILE_HTML,
+        zeit_verbrechen_config(max_text_length=NO_TEXT_LIMIT),
+    )
+    summary = parsed.entries[0]["summary"]
+    assert "Real text." in summary
+    assert "<script" not in summary
+    assert "alert(1)" not in summary
+    assert "onerror" not in summary
+    assert "javascript:" not in summary
+
+
+# Variants of one `<img>` that the regex has to see. feedparser normalises the
+# markup it keeps, which is why these are pinned against the pattern itself
+# rather than through a feed: the parsed summary would never show them, and the
+# same pattern is used on `content` values and by `process_image`.
+IMG_VARIANTS = [
+    '<img src="a.png" alt="x">',
+    "<img src='a.png' alt='x'>",
+    '<img alt="x" src="a.png">',
+    '<img\n  src="a.png"\n  alt="x">',
+]
+
+
+@pytest.mark.parametrize("markup", IMG_VARIANTS)
+def test_the_image_pattern_matches_the_usual_img_spellings(markup: str) -> None:
+    """Test the pattern behind `remove_summary_image` and the image fallback.
+
+    It only matched a double quoted `src` on a single line, so a single quoted
+    or wrapped tag was silently left in the summary and its URL was not found.
+    """
+    assert re.sub(IMAGE_REGEX, "", markup) == ""
+    assert re.findall(IMAGE_REGEX, markup, re.S) == ["a.png"]
+
+
 UNPARSABLE_DATE = "not a date at all"
 FEED_WITH_A_BROKEN_DATE = f"""<?xml version="1.0"?>
 <rss version="2.0"><channel>

@@ -55,7 +55,11 @@ DEFAULT_SCAN_INTERVAL_MINUTES = int(DEFAULT_SCAN_INTERVAL.total_seconds() // 60)
 MIN_SCAN_INTERVAL_MINUTES = 1
 MAX_SCAN_INTERVAL_MINUTES = 10080  # one week
 
-IMAGE_REGEX = r"<img.+?src=\"(.+?)\".+?>"
+# Both quote styles, and `[^>]` rather than `.` so a tag broken over several
+# lines is matched without the caller having to pass re.S. An unquoted `src=x`
+# is still not matched - the summary this runs on has been through feedparser's
+# sanitiser, which normalises the markup it keeps.
+IMAGE_REGEX = r"<img[^>]*?src=[\"']([^\"']*)[\"'][^>]*?>"
 
 # What the inclusions/exclusions pickers offer. Feeds carry whatever they like,
 # so the field stays open for a custom value - these are the keys that are

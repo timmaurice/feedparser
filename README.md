@@ -110,6 +110,18 @@ choice is stored as a list — the same shape YAML uses. Entries configured
 before this, whose options held a comma separated string, are converted on
 upgrade and keep filtering exactly as they did.
 
+### HTML in summaries
+
+`summary`, `content` and `subtitle` keep the publisher's HTML — that is what
+the [rss-accordion](https://github.com/timmaurice/lovelace-rss-accordion) card
+renders, with `unsafeHTML`. The markup has been through `feedparser`'s own
+sanitiser first (`SANITIZE_HTML`, on by default), which applies an allow-list:
+`<script>` and `<style>` elements, event handler attributes such as `onerror`
+and `javascript:` URLs are stripped before the integration ever sees the value.
+This integration does not sanitise on top of that, so the allow-list is part of
+the contract here and there is a test pinning it. Anything reading these
+attributes should still treat them as untrusted publisher content.
+
 ### Entities, devices and diagnostics
 
 Each feed added through the UI gets a device of its own, named after the feed
