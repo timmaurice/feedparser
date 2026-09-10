@@ -429,7 +429,7 @@ def _is_filtered(key: str, config: FeedParserConfig) -> bool:
     )
 
 
-def parse_date(date: str, config: FeedParserConfig) -> datetime | None:
+def parse_date(date: object, config: FeedParserConfig) -> datetime | None:
     """Parse a feed date, falling back to dateutil. None when unparsable.
 
     Substituting the current time for a date nobody could read used to make the
@@ -437,7 +437,19 @@ def parse_date(date: str, config: FeedParserConfig) -> datetime | None:
     a date that is wrong in a way no consumer can detect. An entry with no
     usable date simply has no date; the key is left out, which is already what
     happens for a feed that does not send one.
+
+    Unparsable covers whatever a feed puts under a date key, not only a string
+    neither parser understands: a feed that sends a number or a list there used
+    to take the whole poll down with an AttributeError out of dateutil.
     """
+    if not isinstance(date, str):
+        _LOGGER.warning(
+            "Feed %s: The date %r is not text and cannot be parsed. "
+            "The entry is kept without it.",
+            config.name,
+            date,
+        )
+        return None
     try:
         parsed_time: datetime = email.utils.parsedate_to_datetime(date)
     except (ValueError, TypeError):
@@ -470,9 +482,23 @@ def parse_date(date: str, config: FeedParserConfig) -> datetime | None:
         )
         parsed_time = parsed_time.replace(tzinfo=timezone.utc)
     if not parsed_time.tzname():
-        parsed_time = parsed_time.replace(
-            tzinfo=timezone(parsed_time.utcoffset()),  # type: ignore[arg-type]
-        )
+        # A named offset is what strftime needs. `timezone()` refuses one of a
+        # day or more, which a feed can send - `+9999` parses fine and only
+        # blows up here - so an entry with such an offset has no usable date
+        # rather than taking the poll down with it.
+        try:
+            parsed_time = parsed_time.replace(
+                tzinfo=timezone(parsed_time.utcoffset()),  # type: ignore[arg-type]
+            )
+        except ValueError as e:
+            _LOGGER.warning(
+                "Feed %s: The date '%s' has a timezone offset of a day or "
+                "more: %s. The entry is kept without it.",
+                config.name,
+                date,
+                e,
+            )
+            return None
 
     if config.local_time:
         parsed_time = dt.as_local(parsed_time)

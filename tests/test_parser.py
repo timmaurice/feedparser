@@ -32,6 +32,7 @@ from custom_components.feedparser.parser import (
     _OVERSIZED_WARNED,
     FeedParserConfig,
     ParsedFeed,
+    parse_date,
     parse_feed,
 )
 
@@ -241,6 +242,40 @@ def test_an_unparsable_date_is_left_out(
     assert broken["title"] == "No usable date"
     assert "published" in fine
     assert UNPARSABLE_DATE in caplog.text
+
+
+FEED_WITH_A_HUGE_OFFSET = """<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <title>Impossible offsets</title>
+  <item><title>Off the map</title>
+    <pubDate>Tue, 13 Jan 2026 21:06:00 +9999</pubDate></item>
+  <item><title>Proper date</title>
+    <pubDate>Tue, 13 Jan 2026 21:06:00 +0000</pubDate></item>
+</channel></rss>
+"""
+
+
+def test_a_timezone_offset_of_a_day_or_more_does_not_break_the_poll() -> None:
+    """Test that an impossible offset costs the date, not the whole feed.
+
+    `+9999` parses fine and only fails when the offset is turned into a named
+    timezone, which raised out of `parse_date` and took the poll down with it.
+    """
+    parsed = parse_feed(FEED_WITH_A_HUGE_OFFSET, zeit_verbrechen_config())
+    broken, fine = parsed.entries
+    assert "published" not in broken
+    assert broken["title"] == "Off the map"
+    assert "published" in fine
+
+
+@pytest.mark.parametrize("value", [12345, ["a date"], {"a": 1}, 1.5])
+def test_a_date_that_is_not_text_is_dropped(value: object) -> None:
+    """Test that a feed cannot take a poll down by sending a non-string date.
+
+    Only `ParserError`, `TypeError` and `OverflowError` were caught, and
+    dateutil answers a value it cannot even read with an `AttributeError`.
+    """
+    assert parse_date(value, zeit_verbrechen_config()) is None
 
 
 def test_an_entry_with_nothing_left_in_it_is_not_exposed() -> None:
