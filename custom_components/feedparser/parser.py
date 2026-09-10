@@ -107,23 +107,37 @@ def parse_feed(content: bytes | str, config: FeedParserConfig) -> ParsedFeed:
     # cap would slice from the end of the list (`entries[:-5]` keeps all but the
     # last five) and put a negative number in the state, so treat anything below
     # zero as zero.
-    native_value = min(len(parsed_feed.entries), max(config.show_topn, 0))
+    considered = min(len(parsed_feed.entries), max(config.show_topn, 0))
     _LOGGER.debug(
         "Feed %s: %s entries is going to be added to the sensor",
         config.name,
-        native_value,
+        considered,
     )
+    # An entry can come out with nothing in it - narrow `inclusions` and a value
+    # the entry does not have, or a date no parser could read - and a keyless
+    # entry is something a card has to render around. It is left out, and the
+    # state counts what is actually there, which is what the state has always
+    # meant.
     entries = [
-        generate_sensor_entry(feed_entry, config)
-        for feed_entry in parsed_feed.entries[:native_value]
+        entry
+        for feed_entry in parsed_feed.entries[:considered]
+        if (entry := generate_sensor_entry(feed_entry, config))
     ]
+    if dropped := considered - len(entries):
+        _LOGGER.debug(
+            "Feed %s: %s of %s entries had no value left after filtering and "
+            "are not exposed",
+            config.name,
+            dropped,
+            considered,
+        )
     _LOGGER.debug(
         "Feed %s: Sensor state updated - %s entries",
         config.name,
         len(entries),
     )
     _warn_if_oversized(channel, entries, config)
-    return ParsedFeed(channel=channel, entries=entries, native_value=native_value)
+    return ParsedFeed(channel=channel, entries=entries, native_value=len(entries))
 
 
 def is_parsable_feed(content: bytes | str) -> bool:

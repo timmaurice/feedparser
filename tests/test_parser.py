@@ -243,6 +243,21 @@ def test_an_unparsable_date_is_left_out(
     assert UNPARSABLE_DATE in caplog.text
 
 
+def test_an_entry_with_nothing_left_in_it_is_not_exposed() -> None:
+    """Test that a card never gets a keyless entry, and the state agrees.
+
+    `inclusions` narrowed to a single key plus a date no parser can read leaves
+    an entry with no keys at all. It used to be exposed as `{}` and counted in
+    the state, so the sensor claimed an entry a card could render nothing of.
+    """
+    parsed = parse_feed(
+        FEED_WITH_A_BROKEN_DATE,
+        zeit_verbrechen_config(inclusions=["published"]),
+    )
+    assert parsed.entries == [{"published": parsed.entries[0]["published"]}]
+    assert parsed.native_value == len(parsed.entries) == 1
+
+
 # The fixture carries an audio enclosure and a link on every entry, which is
 # what makes it the one to pin the derived keys against.
 DERIVED_KEYS = ("image", "audio", "link")
