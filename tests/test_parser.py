@@ -148,6 +148,65 @@ def test_show_topn_still_overrides_the_default() -> None:
     assert parsed.native_value == EXPECTED_OVERRIDE_ENTRIES
 
 
+# The fixture carries an audio enclosure and a link on every entry, which is
+# what makes it the one to pin the derived keys against.
+DERIVED_KEYS = ("image", "audio", "link")
+
+
+def test_inclusions_also_narrow_down_the_derived_keys() -> None:
+    """Test that `link`, `audio` and `image` obey `inclusions` like any key.
+
+    They are derived from the feed entry instead of copied out of it, and used
+    to be gated on the exclusions alone - so an entry narrowed down to
+    `title, published` came back carrying `audio` and `link` as well.
+    """
+    parsed = parse_feed(
+        ZEIT_VERBRECHEN.read_bytes(),
+        zeit_verbrechen_config(inclusions=["title", "published"]),
+    )
+    assert parsed.entries
+    for entry in parsed.entries:
+        assert set(entry) == {"title", "published"}
+
+
+def test_a_derived_key_that_is_included_is_still_added() -> None:
+    """Test that naming a derived key in `inclusions` is what gets it added."""
+    parsed = parse_feed(
+        ZEIT_VERBRECHEN.read_bytes(),
+        zeit_verbrechen_config(inclusions=["title", *DERIVED_KEYS]),
+    )
+    assert parsed.entries
+    for entry in parsed.entries:
+        assert "title" in entry
+        assert {"audio", "link"} <= set(entry)
+        assert set(entry) <= {"title", *DERIVED_KEYS}
+
+
+def test_exclusions_still_drop_a_derived_key_on_their_own() -> None:
+    """Test that excluding a derived key without any inclusions still works."""
+    parsed = parse_feed(
+        ZEIT_VERBRECHEN.read_bytes(),
+        zeit_verbrechen_config(exclusions=list(DERIVED_KEYS)),
+    )
+    assert parsed.entries
+    for entry in parsed.entries:
+        assert not set(entry) & set(DERIVED_KEYS)
+
+
+def test_inclusions_narrow_down_the_channel_image_too() -> None:
+    """Test that the feed level image follows the same rule as the entries."""
+    included = parse_feed(
+        ZEIT_VERBRECHEN.read_bytes(),
+        zeit_verbrechen_config(inclusions=["title", "image"]),
+    )
+    assert "image" in included.channel
+    narrowed = parse_feed(
+        ZEIT_VERBRECHEN.read_bytes(),
+        zeit_verbrechen_config(inclusions=["title"]),
+    )
+    assert "image" not in narrowed.channel
+
+
 @pytest.mark.parametrize("show_topn", [0, -5])
 def test_a_show_topn_below_one_yields_no_entries(show_topn: int) -> None:
     """Test that a non-positive cap cannot produce a negative state.

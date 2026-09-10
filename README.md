@@ -70,6 +70,12 @@ sensor:
 ```
 
 If you wish the integration to look for enclosures in the feed entries, add `image` to `inclusions` list. Do not use `enclosure`.
+
+`image`, `audio` and `link` are derived from the feed entry rather than copied
+out of it, and they follow the same rule as every other key: `inclusions`
+restricts, so once you set it, name them there to get them; `exclusions` drops
+them. The `image` of the feed itself, in the `channel` attribute, is filtered
+the same way.
 The integration tries to get the link to an image for the given feed item and stores it under the attribute named `image`. If it fails to find it, it assigns the Home Assistant logo to it instead.
 
 Note that the original `pubDate` field is available under `published` attribute for the given feed entry. Other date-type values that can be available are `updated`, `created` and `expired`. Please refer to [the documentation of the original feedparser](https://feedparser.readthedocs.io/en/latest/date-parsing.html) library.

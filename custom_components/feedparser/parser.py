@@ -320,20 +320,24 @@ def generate_sensor_entry(
         elif isinstance(value, (dict, list, str, int, float, bool)):
             sensor_entry[key] = value
 
+    # `image`, `audio` and `link` are derived rather than copied, so they have
+    # to go through the same filter as every other key. Checking the exclusions
+    # alone put them back into an entry that `inclusions` had just narrowed
+    # down to something else, which is not what the option says it does.
     if (
-        "image" not in config.exclusions
+        not _is_filtered("image", config)
         and "image" not in sensor_entry
         and (image := process_image(feed_entry, config))
     ):
         sensor_entry["image"] = urljoin(config.feed_url, image)
     if (
-        "audio" not in config.exclusions
+        not _is_filtered("audio", config)
         and "audio" not in sensor_entry
         and (audio := process_audio(feed_entry, config))
     ):
         sensor_entry["audio"] = audio
     if (
-        "link" not in config.exclusions
+        not _is_filtered("link", config)
         and "link" not in sensor_entry
         and (processed_link := process_link(feed_entry, config))
     ):
@@ -361,7 +365,7 @@ def generate_channel_info(
         elif isinstance(value, (dict, list, str, int, float, bool)):
             channel_info[key] = value
 
-    if "image" not in config.exclusions:
+    if not _is_filtered("image", config):
         image_url = feed_info.get("image", {}).get("href") or feed_info.get(
             "image",
             {},
