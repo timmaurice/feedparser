@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import re
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
@@ -17,13 +18,33 @@ if TYPE_CHECKING:
 
 REDACTED = "**REDACTED**"
 
+# A path segment that is long, made only of the characters a token is made of,
+# and mixes letters with digits. Private podcast feeds - Patreon, Supporting
+# Cast and the like - put their per-subscriber token in the path rather than in
+# the query string, as `/feeds/<token>/rss`. A readable segment such as
+# `matter_energy` or `wdr-aktuell-152` does not match, so the URL stays
+# recognisable; the rule errs towards redacting, because an over-redacted
+# diagnostics download costs a follow-up question and a leaked one costs a feed.
+TOKENISH_SEGMENT = re.compile(
+    r"^(?=[\w=-]*\d)(?=[\w=-]*[A-Za-z])[A-Za-z0-9_=-]{16,}$",
+)
+
+
+def redact_path(path: str) -> str:
+    """Return a URL path with the segments that look like a secret removed."""
+    return "/".join(
+        REDACTED if TOKENISH_SEGMENT.match(segment) else segment
+        for segment in path.split("/")
+    )
+
 
 def redact_url(url: str) -> str:
     """Return a feed URL without the parts that can carry a secret.
 
     A diagnostics download tends to end up in a GitHub issue, and a private
-    feed URL carries its token in the query string or in the userinfo. The path
-    is what makes the URL recognisable, so that is kept.
+    feed URL carries its token in the query string, in the userinfo or - which
+    is what a private podcast feed does - in the path. The rest of the path is
+    what makes the URL recognisable, so that is kept.
     """
     split = urlsplit(url)
     netloc = f"{REDACTED}@{split.hostname}" if split.username else split.netloc
@@ -31,7 +52,7 @@ def redact_url(url: str) -> str:
         (
             split.scheme,
             netloc,
-            split.path,
+            redact_path(split.path),
             REDACTED if split.query else "",
             "",
         ),

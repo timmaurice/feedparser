@@ -181,3 +181,27 @@ def test_diagnostics_survive_an_entry_that_never_set_up() -> None:
     assert report["entry"]["version"] == ENTRY_VERSION
     assert "pw@" not in report["entry"]["data"]["feed_url"]
     assert "setup" in report
+
+
+def test_redact_url_hides_a_token_in_the_path() -> None:
+    """Test that a private podcast feed does not leak its subscriber token.
+
+    Patreon, Supporting Cast and the like put the token in the path rather than
+    in the query string - `/feeds/<token>/rss` - which is exactly the URL a
+    report ending up in a GitHub issue must not carry.
+    """
+    reported = redact_url("https://ex.com/feeds/8a3f1b2c9d4e5f60/rss")
+    assert "8a3f1b2c9d4e5f60" not in reported
+    assert reported.startswith("https://ex.com/feeds/")
+    assert reported.endswith("/rss")
+    uuid = redact_url("https://ex.com/p/550e8400-e29b-41d4-a716-446655440000/feed")
+    assert "550e8400" not in uuid
+
+
+def test_redact_url_keeps_a_readable_path_readable() -> None:
+    """Test that the path still says which feed the report is about."""
+    for url in (
+        "https://ex.com/rss/matter_energy/engineering.xml",
+        "https://www1.wdr.de/mediathek/audio/wdr-aktuell-news/wdr-aktuell-152.podcast",
+    ):
+        assert redact_url(url) == url
