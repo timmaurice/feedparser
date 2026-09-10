@@ -312,7 +312,9 @@ def generate_sensor_entry(
         if _is_filtered(key, config):
             continue
         if key in DATE_KEYS:
-            parsed_date: datetime = parse_date(value, config)
+            parsed_date = parse_date(value, config)
+            if parsed_date is None:
+                continue
             sensor_entry[key] = parsed_date.strftime(config.date_format)
         elif key == "image":
             if href := value.get("href"):
@@ -360,8 +362,10 @@ def generate_channel_info(
         if _is_filtered(key, config) or key == "image":
             continue
         if key in DATE_KEYS:
-            parsed_date: datetime = parse_date(value, config)
-            channel_info[key] = parsed_date.strftime(config.date_format)
+            parsed_channel_date = parse_date(value, config)
+            if parsed_channel_date is None:
+                continue
+            channel_info[key] = parsed_channel_date.strftime(config.date_format)
         elif isinstance(value, (dict, list, str, int, float, bool)):
             channel_info[key] = value
 
@@ -389,8 +393,15 @@ def _is_filtered(key: str, config: FeedParserConfig) -> bool:
     )
 
 
-def parse_date(date: str, config: FeedParserConfig) -> datetime:
-    """Parse a feed date, falling back to dateutil and finally to now."""
+def parse_date(date: str, config: FeedParserConfig) -> datetime | None:
+    """Parse a feed date, falling back to dateutil. None when unparsable.
+
+    Substituting the current time for a date nobody could read used to make the
+    entry look like it had just been published, and it moved on every poll -
+    a date that is wrong in a way no consumer can detect. An entry with no
+    usable date simply has no date; the key is left out, which is already what
+    happens for a feed that does not send one.
+    """
     try:
         parsed_time: datetime = email.utils.parsedate_to_datetime(date)
     except (ValueError, TypeError):
@@ -405,15 +416,15 @@ def parse_date(date: str, config: FeedParserConfig) -> datetime:
         )
         try:
             parsed_time = dateutil_parser.parse(date)
-        except (dateutil_parser.ParserError, TypeError) as e:
+        except (dateutil_parser.ParserError, TypeError, OverflowError) as e:
             _LOGGER.warning(
                 "Feed %s: Unable to parse date '%s' with dateutil: %s. "
-                "Using current time as fallback.",
+                "The entry is kept without it.",
                 config.name,
                 date,
                 e,
             )
-            parsed_time = dt.utcnow()
+            return None
 
     if not parsed_time.tzinfo:
         _LOGGER.debug(

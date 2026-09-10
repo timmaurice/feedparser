@@ -148,6 +148,38 @@ def test_show_topn_still_overrides_the_default() -> None:
     assert parsed.native_value == EXPECTED_OVERRIDE_ENTRIES
 
 
+UNPARSABLE_DATE = "not a date at all"
+FEED_WITH_A_BROKEN_DATE = f"""<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <title>Broken dates</title>
+  <item><title>No usable date</title><pubDate>{UNPARSABLE_DATE}</pubDate></item>
+  <item><title>Proper date</title>
+    <pubDate>Tue, 13 Jan 2026 21:06:00 +0000</pubDate></item>
+</channel></rss>
+"""
+
+
+def test_an_unparsable_date_is_left_out(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that a date nobody can read does not become the current time.
+
+    The fallback used to be `now()`, so the entry claimed to have just been
+    published and said so again with a new time on every poll - wrong in a way
+    no consumer of the sensor can spot.
+    """
+    with caplog.at_level(logging.WARNING):
+        parsed = parse_feed(
+            FEED_WITH_A_BROKEN_DATE,
+            zeit_verbrechen_config(),
+        )
+    broken, fine = parsed.entries
+    assert "published" not in broken
+    assert broken["title"] == "No usable date"
+    assert "published" in fine
+    assert UNPARSABLE_DATE in caplog.text
+
+
 # The fixture carries an audio enclosure and a link on every entry, which is
 # what makes it the one to pin the derived keys against.
 DERIVED_KEYS = ("image", "audio", "link")

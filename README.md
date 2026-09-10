@@ -78,6 +78,11 @@ them. The `image` of the feed itself, in the `channel` attribute, is filtered
 the same way.
 The integration tries to get the link to an image for the given feed item and stores it under the attribute named `image`. If it fails to find it, it assigns the Home Assistant logo to it instead.
 
+A date the parsers cannot read is left out of the entry rather than replaced
+with the current time: a substituted date made the entry look as if it had just
+been published and moved on every poll. The log names the value that could not
+be parsed.
+
 Note that the original `pubDate` field is available under `published` attribute for the given feed entry. Other date-type values that can be available are `updated`, `created` and `expired`. Please refer to [the documentation of the original feedparser](https://feedparser.readthedocs.io/en/latest/date-parsing.html) library.
 
 **Configuration variables:**
