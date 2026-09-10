@@ -58,22 +58,36 @@ async def async_get_config_entry_diagnostics(
     What a report about this integration needs: the settings in effect, and
     enough about the last poll to tell a feed that is not being fetched from
     one whose entries are being filtered away or dropped by the recorder.
+
+    An entry whose setup failed has no coordinator, and that is the entry a
+    report is most likely to be downloaded for. Reaching into `hass.data` for
+    it unguarded turned "Download diagnostics" into a traceback; what is known
+    about such an entry - its stored settings - is reported instead.
     """
-    coordinator: FeedparserCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: FeedparserCoordinator | None = hass.data.get(DOMAIN, {}).get(
+        entry.entry_id,
+    )
+    entry_report = {
+        "version": entry.version,
+        "data": {
+            key: redact_url(value) if key == "feed_url" else value
+            for key, value in entry.data.items()
+        },
+        "options": dict(entry.options),
+    }
+    if coordinator is None:
+        return {
+            "entry": entry_report,
+            "setup": "The entry is not set up, so there is no poll to report.",
+        }
+
     config = dataclasses.asdict(coordinator.config)
     config["feed_url"] = redact_url(config["feed_url"])
     parsed = coordinator.data
     size = attribute_size(coordinator)
 
     return {
-        "entry": {
-            "version": entry.version,
-            "data": {
-                key: redact_url(value) if key == "feed_url" else value
-                for key, value in entry.data.items()
-            },
-            "options": dict(entry.options),
-        },
+        "entry": entry_report,
         "parser_config": config,
         "coordinator": {
             "last_update_success": coordinator.last_update_success,

@@ -163,3 +163,21 @@ def test_a_file_feed_gets_no_configuration_url() -> None:
     assert "configuration_url" not in device_info(parser_config(), ENTRY_ID)
     web = device_info(parser_config(feed_url="https://example.com/f.xml"), ENTRY_ID)
     assert web["configuration_url"] == "https://example.com/f.xml"
+
+
+def test_diagnostics_survive_an_entry_that_never_set_up() -> None:
+    """Test that a failed entry gets a report rather than a traceback.
+
+    An entry whose setup failed has no coordinator in `hass.data`, and it is
+    the entry somebody is most likely to download diagnostics for. Reading it
+    unguarded made the download raise a KeyError on exactly that entry.
+    """
+    hass = FakeHass(FakeCoordinator(parser_config()))
+    hass.data[DOMAIN] = {}
+    entry = FakeEntry({"name": "ntv", "feed_url": "https://user:pw@example.com/f.xml"})
+    report = asyncio.run(
+        async_get_config_entry_diagnostics(hass, entry),  # type: ignore[arg-type]
+    )
+    assert report["entry"]["version"] == ENTRY_VERSION
+    assert "pw@" not in report["entry"]["data"]["feed_url"]
+    assert "setup" in report
