@@ -34,6 +34,11 @@ Alternatively, click on the button below to add the repository:
 3. Enter the name and URL of your RSS feed.
 4. Once added, you can click **Configure** on the integration entry to adjust settings like the update interval, date format, inclusions, and exclusions.
 
+The URL is fetched while you add the feed and the response has to parse as
+RSS or Atom. A reachable address that is an ordinary web page is rejected with
+"does not serve an RSS or Atom feed" instead of becoming an entry whose sensor
+sits at 0 forever.
+
 The **Update interval** is set in minutes and applies per feed, so a feed that changes every few minutes and one that changes every few hours can be polled at different rates. It defaults to 60 minutes. Feeds added before this option existed keep polling at the 60 minute default until you change it.
 
 ### Via configuration.yaml (Legacy)
@@ -65,7 +70,18 @@ sensor:
 ```
 
 If you wish the integration to look for enclosures in the feed entries, add `image` to `inclusions` list. Do not use `enclosure`.
+
+`image`, `audio` and `link` are derived from the feed entry rather than copied
+out of it, and they follow the same rule as every other key: `inclusions`
+restricts, so once you set it, name them there to get them; `exclusions` drops
+them. The `image` of the feed itself, in the `channel` attribute, is filtered
+the same way.
 The integration tries to get the link to an image for the given feed item and stores it under the attribute named `image`. If it fails to find it, it assigns the Home Assistant logo to it instead.
+
+A date the parsers cannot read is left out of the entry rather than replaced
+with the current time: a substituted date made the entry look as if it had just
+been published and moved on every poll. The log names the value that could not
+be parsed.
 
 Note that the original `pubDate` field is available under `published` attribute for the given feed entry. Other date-type values that can be available are `updated`, `created` and `expired`. Please refer to [the documentation of the original feedparser](https://feedparser.readthedocs.io/en/latest/date-parsing.html) library.
 
@@ -78,7 +94,8 @@ Note that the original `pubDate` field is available under `published` attribute 
 | **feed_url (Required)**      | The RSS feed URL                                                       |
 | **date_format (Optional)**   | strftime date format for date strings **Default** `%a, %b %d %I:%M %p` |
 | **local_time (Optional)**    | Whether to convert date into local time **Default** false              |
-| **show_topn (Optional)**     | fetch how many entres from rss source，if not set then fetch all       |
+| **show_topn (Optional)**     | How many entries to fetch from the feed. **Default** in YAML: all entries |
+| **max_text_length (Optional)** | Characters kept per text field, `0` keeps the full text **Default** `250` |
 | **inclusions (Optional)**    | List of fields to include from populating the list                     |
 | **exclusions (Optional)**    | List of fields to exclude from populating the list                     |
 | **scan_interval (Optional)** | Update interval in hours                                               |
@@ -86,6 +103,96 @@ Note that the original `pubDate` field is available under `published` attribute 
 ---
 
 Note: Will return all fields if no inclusions or exclusions are specified
+
+In the UI, **Inclusions** and **Exclusions** are pickers: the common field names
+are offered for selection and anything else can still be typed in, and the
+choice is stored as a list — the same shape YAML uses. Entries configured
+before this, whose options held a comma separated string, are converted on
+upgrade and keep filtering exactly as they did.
+
+### HTML in summaries
+
+`summary`, `content` and `subtitle` keep the publisher's HTML — that is what
+the [rss-accordion](https://github.com/timmaurice/lovelace-rss-accordion) card
+renders, with `unsafeHTML`. Every value the sensor exposes is run through an
+allow-list first: `<script>` and `<style>` elements, event handler attributes
+such as `onerror` and `javascript:` URLs are removed, from `summary`,
+`content` and `subtitle` as well as from `title`, `author` and the feed level
+values in `channel`.
+
+`feedparser` applies that allow-list on its own, but only to values a feed
+declares as HTML. An Atom `<summary type="text">`, an RSS `<title>` and an
+`<author>` are declared as plain text, and their escaped markup was unescaped
+and passed on live. The integration therefore sanitises its own output rather
+than relying on the library's `SANITIZE_HTML` flag — which is a process-wide
+global anything else in Home Assistant can switch off. `tests/test_sanitize.py`
+pins this per feed dialect, including with that flag turned off.
+
+The `link`, `image` and `audio` URLs are rendered as an `href` or a `src`, so
+they are checked against the same scheme allow-list: a `javascript:` or `data:`
+URL is dropped rather than handed to the card.
+
+None of this makes the markup trustworthy. It is publisher content that ends up
+in a dashboard, and anything reading these attributes should treat it as such.
+
+### Entities, devices and diagnostics
+
+Each feed added through the UI gets a device of its own, named after the feed
+and linking to the feed URL, with the sensor as its single entity. The entity
+keeps the name and the entity id it already had.
+
+YAML feeds now have a stable unique id as well, so they show up in the entity
+registry and can be renamed, hidden or assigned to an area like any other
+entity. As long as you leave `name` and `feed_url` alone, the sensor keeps the
+entity id it has always had, along with the area, icon and name you gave it.
+
+The id is derived from `feed_url` **and** `name`, because two YAML sensors may
+watch the same feed under different names and a shared unique id would make
+Home Assistant drop the second one. The price is that editing either of them
+is a new identity: the renamed sensor comes up as a new entity — with a new
+entity id, and without the area, icon or rename you had set — while the old
+registry entry stays behind as an unavailable one holding the old entity id.
+The same is true of a feed you remove from `configuration.yaml`. Delete the
+leftover entry under **Settings > Devices & Services > Entities**; nothing else
+is needed, and the old entity's recorder history stays with it.
+
+If you want a rename to keep the sensor's identity, use a UI entry instead:
+those are identified by the config entry, so their name is free to change.
+
+A **Download diagnostics** button on the config entry reports the settings in
+effect, whether the last poll succeeded, how many entries and which keys came
+out of it, and how large the state attributes are compared with the recorder's
+limit. The feed URL is reported without its query string or userinfo, and the
+entry texts are not included.
+
+### Keeping the state attributes small
+
+The entries end up in the `entries` state attribute, and Home Assistant's
+recorder drops the attributes of a state larger than 16 KiB, which leaves the
+sensor with a history that has no entries in it. Two settings keep a feed under
+that limit:
+
+- `show_topn` — how many entries are exposed. Feeds added through the UI default
+  to the newest **5**. YAML sensors are **not** capped: the sensor's state is the
+  number of entries, so a default would change the meaning of an existing
+  recorder history and of any template comparing that state. A YAML sensor keeps
+  every entry until you set `show_topn` yourself.
+- `max_text_length` — how many characters of long text such as `summary` or
+  `content` are kept, **250** by default. Values that fit are stored unchanged;
+  longer ones are cut at a tag boundary and any markup left open is closed
+  again, so a truncated summary is never a half written tag. Set it to `0` to
+  switch the shortening off and keep the full article text — sensible for a
+  short feed with narrow `inclusions`.
+
+If the attributes are too large anyway, the integration logs a warning naming
+the size and the limit, so the reason for an empty history is visible in the log.
+
+Feeds that were added through the UI before the `show_topn` default existed were
+stored with the old value of `9999` — the form's default, not a choice anyone
+made. Those are migrated to `5` on upgrade. A stored `show_topn` below `1` is
+migrated to `5` as well: the form rejects those now, and a `0` or a negative
+number left the sensor with no entries at all, which could only be undone by
+opening the options. A `show_topn` you picked yourself is never changed.
 
 Due to how `custom_components` are loaded, it is normal to see a `ModuleNotFoundError` error on first boot after adding this, to resolve it, restart Home-Assistant.
 

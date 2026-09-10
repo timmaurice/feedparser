@@ -14,17 +14,70 @@ CONF_INCLUSIONS = "inclusions"
 CONF_EXCLUSIONS = "exclusions"
 CONF_SHOW_TOPN = "show_topn"
 CONF_REMOVE_SUMMARY_IMG = "remove_summary_image"
+CONF_MAX_TEXT_LENGTH = "max_text_length"
 
 DEFAULT_DATE_FORMAT = "%a, %b %d %Y %I:%M %p"
 DEFAULT_SCAN_INTERVAL = timedelta(hours=1)
-DEFAULT_TOPN = 9999
+# The recorder refuses to store a state whose attributes are larger than this
+# (homeassistant.components.recorder.db_schema.MAX_STATE_ATTRS_BYTES).
+MAX_STATE_ATTRS_BYTES = 16384
+
+# Everything the sensor exposes ends up in those attributes, so keep the default
+# small - an unbounded default made the recorder reject the state on every poll.
+# Users who want more entries can still raise show_topn.
+DEFAULT_TOPN = 5
+
+# The number the old default stood for: "keep every entry the feed offers". It
+# is still what a YAML sensor without an explicit show_topn gets, and config
+# entries carrying it were never given that value deliberately - the config flow
+# materialised its own default into the entry - so the migration replaces it.
+UNLIMITED_TOPN = 9999
+
+# Fewer than one entry is not a feed anybody wants to look at, and a negative
+# number used to slice the entry list from the end.
+MIN_TOPN = 1
+
+# Feed entries carry whole articles in `summary`/`content`. Cut the text at this
+# many characters so a default sized feed stays well below the recorder limit.
+# Set max_text_length to NO_TEXT_LIMIT to keep the full text.
+DEFAULT_MAX_TEXT_LENGTH = 250
+NO_TEXT_LIMIT = 0
+TRUNCATION_SUFFIX = "..."
+
+# Values under these keys are URLs or identifiers - enclosure URLs in particular
+# get long, and a truncated one is a broken one.
+UNTRUNCATED_KEYS = frozenset(
+    {"link", "image", "audio", "href", "url", "id", "guid"},
+)
 
 # UI configured entries store the scan interval as a plain number of minutes.
 DEFAULT_SCAN_INTERVAL_MINUTES = int(DEFAULT_SCAN_INTERVAL.total_seconds() // 60)
 MIN_SCAN_INTERVAL_MINUTES = 1
 MAX_SCAN_INTERVAL_MINUTES = 10080  # one week
 
-IMAGE_REGEX = r"<img.+?src=\"(.+?)\".+?>"
+# Both quote styles, and `[^>]` rather than `.` so a tag broken over several
+# lines is matched without the caller having to pass re.S. An unquoted `src=x`
+# is still not matched - the summary this runs on has been through feedparser's
+# sanitiser, which normalises the markup it keeps.
+IMAGE_REGEX = r"<img[^>]*?src=[\"']([^\"']*)[\"'][^>]*?>"
+
+# What the inclusions/exclusions pickers offer. Feeds carry whatever they like,
+# so the field stays open for a custom value - these are the keys that are
+# actually worth clicking, and having them as chips is what stops a typo from
+# quietly filtering an entry down to nothing.
+FILTERABLE_FIELDS = [
+    "title",
+    "link",
+    "summary",
+    "content",
+    "image",
+    "audio",
+    "published",
+    "updated",
+    "author",
+    "tags",
+    "id",
+]
 
 REQUEST_TIMEOUT = 30
 USER_AGENT = (
@@ -44,6 +97,20 @@ REQUEST_HEADERS = {
 }
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def as_field_list(value: object) -> list[str]:
+    """Return an inclusions/exclusions setting as a list of field names.
+
+    Options used to be stored as the comma separated string the text field
+    handed over while `data` held a list, so both shapes are still out there:
+    entries written before the migration, and YAML.
+    """
+    if isinstance(value, str):
+        return [field.strip() for field in value.split(",") if field.strip()]
+    if isinstance(value, list | tuple):
+        return [str(field).strip() for field in value if str(field).strip()]
+    return []
 
 
 def scan_interval_from_minutes(value: str | int | float | None) -> timedelta:

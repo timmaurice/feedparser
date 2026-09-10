@@ -14,6 +14,9 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
 )
 
 from .api import FeedparserAPI, FeedparserApiError
@@ -23,17 +26,25 @@ from .const import (
     CONF_FEED_URL,
     CONF_INCLUSIONS,
     CONF_LOCAL_TIME,
+    CONF_MAX_TEXT_LENGTH,
     CONF_REMOVE_SUMMARY_IMG,
     CONF_SHOW_TOPN,
     DEFAULT_DATE_FORMAT,
+    DEFAULT_MAX_TEXT_LENGTH,
     DEFAULT_SCAN_INTERVAL_MINUTES,
     DEFAULT_TOPN,
     DOMAIN,
+    FILTERABLE_FIELDS,
     MAX_SCAN_INTERVAL_MINUTES,
     MIN_SCAN_INTERVAL_MINUTES,
+    MIN_TOPN,
+    NO_TEXT_LIMIT,
+    as_field_list,
 )
+from .parser import is_parsable_feed
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
     from homeassistant.data_entry_flow import FlowResult
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,12 +59,35 @@ SCAN_INTERVAL_SELECTOR = NumberSelector(
     ),
 )
 
+# A negative length would slip past `_truncate_entry`, which reads anything at
+# or below NO_TEXT_LIMIT as "keep the full text", and silently switch the
+# truncation off. The YAML schema uses cv.positive_int for the same reason.
+MAX_TEXT_LENGTH_VALIDATOR = vol.All(vol.Coerce(int), vol.Range(min=NO_TEXT_LIMIT))
+
+# `parse_feed` slices the entries with this, so a negative number would slice
+# from the end of the list and leave a negative number in the sensor's state,
+# and zero would produce a sensor with no entries at all. The YAML schema uses
+# cv.positive_int; one entry is the smallest request that means anything.
+SHOW_TOPN_VALIDATOR = vol.All(vol.Coerce(int), vol.Range(min=MIN_TOPN))
+
+# Chips rather than a text field, so the stored value is the list the rest of
+# the integration works with and a field name is picked instead of typed. The
+# field stays open for a custom value because a feed may carry any key.
+FIELD_SELECTOR = SelectSelector(
+    SelectSelectorConfig(
+        options=FILTERABLE_FIELDS,
+        multiple=True,
+        custom_value=True,
+        mode=SelectSelectorMode.DROPDOWN,
+    ),
+)
+
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NAME): str,
         vol.Required(CONF_FEED_URL): str,
         vol.Optional(CONF_DATE_FORMAT, default=DEFAULT_DATE_FORMAT): str,
-        vol.Optional(CONF_SHOW_TOPN, default=DEFAULT_TOPN): int,
+        vol.Optional(CONF_SHOW_TOPN, default=DEFAULT_TOPN): SHOW_TOPN_VALIDATOR,
         vol.Optional(
             CONF_SCAN_INTERVAL,
             default=DEFAULT_SCAN_INTERVAL_MINUTES,
@@ -64,23 +98,48 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 )
 
 
+async def async_validate_feed(hass: HomeAssistant, url: str) -> str | None:
+    """Return the error key for `url`, or None when it serves a feed.
+
+    Reachability alone was accepted before, which let any web page become a
+    config entry.
+    """
+    try:
+        content = await FeedparserAPI(hass).async_fetch(url)
+    except (FeedparserApiError, aiohttp.InvalidURL, ValueError):
+        return "cannot_connect"
+    except Exception:
+        # Whatever it was, it must not reach the user as an unhandled flow
+        # traceback.
+        _LOGGER.exception("Unexpected error fetching feed from %s", url)
+        return "unknown"
+
+    # feedparser is CPU bound and a feed can be large, so keep it off the loop.
+    if not await hass.async_add_executor_job(is_parsable_feed, content):
+        _LOGGER.debug("%s was reachable but is not a feed", url)
+        return "invalid_feed"
+    return None
+
+
 class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Feedparser."""
 
-    VERSION = 1
+    # 2: show_topn values that were only the materialised old default (9999)
+    #    are migrated to DEFAULT_TOPN.
+    # 3: inclusions/exclusions stored as comma separated strings become lists.
+    # Both are handled by async_migrate_entry.
+    VERSION = 4
 
     async def async_step_user(
-        self,
+        self: FeedparserConfigFlow,
         user_input: dict[str, Any] | None = None,
     ) -> FlowResult:
         """Handle the initial step."""
         errors: dict[str, str] = {}
         if user_input is not None:
-            try:
-                # Basic validation: check that the feed is reachable
-                await FeedparserAPI(self.hass).async_fetch(user_input[CONF_FEED_URL])
-            except (FeedparserApiError, aiohttp.InvalidURL, ValueError):
-                errors["base"] = "cannot_connect"
+            error = await async_validate_feed(self.hass, user_input[CONF_FEED_URL])
+            if error:
+                errors["base"] = error
             else:
                 await self.async_set_unique_id(user_input[CONF_FEED_URL])
                 self._abort_if_unique_id_configured()
@@ -102,7 +161,7 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(
-        config_entry: config_entries.ConfigEntry,
+        config_entry: config_entries.ConfigEntry,  # noqa: ARG004
     ) -> config_entries.OptionsFlow:
         """Get the options flow for this handler."""
         return FeedparserOptionsFlowHandler()
@@ -112,7 +171,7 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle Feedparser options."""
 
     async def async_step_init(
-        self,
+        self: FeedparserOptionsFlowHandler,
         user_input: dict[str, Any] | None = None,
     ) -> FlowResult:
         """Manage the options."""
@@ -123,13 +182,19 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
             )
             return self.async_create_entry(title="", data=user_input)
 
-        options = self.config_entry.options
+        # From core 2024.11 on `OptionsFlow.config_entry` is a read-only
+        # property that resolves the entry this flow was opened for, which is
+        # why the handler takes none and stores none. The newest stubs that
+        # install on the Python the hooks run under stop at core 2024.3, where
+        # the attribute does not exist yet, so mypy cannot see it - a gap in
+        # the pinned stubs, not in the code. hacs.json requires 2026.1.
+        entry = self.config_entry  # type: ignore[attr-defined]
+        options = entry.options
 
-        # Helper to get value from options or data
-        def get_val(key, default):
-            val = options.get(key, self.config_entry.data.get(key, default))
-            if isinstance(val, list):
-                return ", ".join([str(v) for v in val])
+        # Helper to get value from options or data. A config entry is an
+        # untyped mapping, so what comes back out of it is genuinely `Any`.
+        def get_val(key: str, default: Any) -> Any:  # noqa: ANN401
+            val = options.get(key, entry.data.get(key, default))
             return val if val is not None else default
 
         return self.async_show_form(
@@ -143,7 +208,13 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Optional(
                         CONF_SHOW_TOPN,
                         default=int(get_val(CONF_SHOW_TOPN, DEFAULT_TOPN)),
-                    ): int,
+                    ): SHOW_TOPN_VALIDATOR,
+                    vol.Optional(
+                        CONF_MAX_TEXT_LENGTH,
+                        default=int(
+                            get_val(CONF_MAX_TEXT_LENGTH, DEFAULT_MAX_TEXT_LENGTH),
+                        ),
+                    ): MAX_TEXT_LENGTH_VALIDATOR,
                     vol.Optional(
                         CONF_SCAN_INTERVAL,
                         default=int(
@@ -152,20 +223,20 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
                     ): SCAN_INTERVAL_SELECTOR,
                     vol.Optional(
                         CONF_LOCAL_TIME,
-                        default=bool(get_val(CONF_LOCAL_TIME, False)),
+                        default=bool(get_val(CONF_LOCAL_TIME, default=False)),
                     ): bool,
                     vol.Optional(
                         CONF_REMOVE_SUMMARY_IMG,
-                        default=bool(get_val(CONF_REMOVE_SUMMARY_IMG, False)),
+                        default=bool(get_val(CONF_REMOVE_SUMMARY_IMG, default=False)),
                     ): bool,
                     vol.Optional(
                         CONF_INCLUSIONS,
-                        default=get_val(CONF_INCLUSIONS, ""),
-                    ): str,  # Comma separated for UI simplicity
+                        default=as_field_list(get_val(CONF_INCLUSIONS, [])),
+                    ): FIELD_SELECTOR,
                     vol.Optional(
                         CONF_EXCLUSIONS,
-                        default=get_val(CONF_EXCLUSIONS, ""),
-                    ): str,  # Comma separated for UI simplicity
+                        default=as_field_list(get_val(CONF_EXCLUSIONS, [])),
+                    ): FIELD_SELECTOR,
                 },
             ),
         )

@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import asyncio
-from pathlib import Path
-from typing import Callable, cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
 from homeassistant.core import HomeAssistant
 
 from custom_components.feedparser.api import FeedparserAPI, FeedparserApiError
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
 
 
 class FakeHass:

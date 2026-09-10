@@ -21,7 +21,11 @@ The integration supports both UI configuration (config flow, recommended) and le
 | `parser.py` | Pure parsing. `parse_feed(content, FeedParserConfig) -> ParsedFeed`. No network, no config entries — this is what the test suite exercises directly. |
 | `coordinator.py` | `FeedparserCoordinator` (a `DataUpdateCoordinator`) ties the two together and owns the polling interval. `build_coordinator(hass, entry)` maps a config entry onto it. |
 | `sensor.py` | `FeedParserSensor`, a `CoordinatorEntity`. Holds no fetch or parse logic. Also carries the legacy YAML `PLATFORM_SCHEMA`. |
-| `config_flow.py` | UI setup and options. Validates the feed URL through `api.py`. |
+| `config_flow.py` | UI setup and options. Validates that the URL is reachable through `api.py` and that the response parses as a feed. |
+| `sanitize.py` | The HTML and URL allow-list every exposed value goes through. See below. |
+| `diagnostics.py` | `async_get_config_entry_diagnostics` — settings, last poll result and attribute size for a config entry. Reports keys, never entry text; redacts the feed URL's query string and userinfo. |
+
+`sanitize.py` sanitises everything the sensor exposes. `feedparser`'s own `SANITIZE_HTML` only covers values a feed declares as HTML, so an Atom `<summary type="text">`, an RSS `<title>` or an `<author>` used to arrive with their escaped markup unescaped and live. Every string in an entry and in `channel` therefore goes through `feedparser.sanitizer._sanitize_html` here — whatever the dialect, and whatever the process-global `SANITIZE_HTML` is set to, which is why the contract does not depend on that flag. URL valued keys (`link`, `image`, `audio`, and nested `href`/`url`) skip the HTML allow-list and are checked against `feedparser.urls.make_safe_absolute_uri` on the stripped value instead, so a `javascript:` or `data:` URL cannot become an `href` or a `src`; a top level one that is rejected drops the key. `tests/test_sanitize.py` pins all of this per dialect. Both imports are private feedparser API, which is what the exact version pin in `manifest.json` is for. `IMAGE_REGEX` is a regex, not an HTML parser; `remove_summary_image` runs it on the sanitised summary, `process_image` on the raw one.
 
 Feeds are polled by the coordinator's `update_interval`; the entity does not poll itself. Parsing runs in the executor because it is CPU-bound on large feeds.
 
@@ -88,10 +92,15 @@ The legacy `run-hass.sh` script still starts a native (non-Docker) instance agai
 
 ## Releasing
 
-Versions are managed by `bump-my-version` (configured in `pyproject.toml`), which keeps `pyproject.toml`, `custom_components/feedparser/manifest.json` and `custom_components/feedparser/sensor.py` in sync.
+Versions are managed by `bumpver` (`[tool.bumpver]` in `pyproject.toml`, and in the `dev` extra),
+which keeps `pyproject.toml`, `custom_components/feedparser/manifest.json` and
+`custom_components/feedparser/sensor.py` in sync. It is not `bump-my-version`, which reads
+`[tool.bumpversion]` and would find no configuration here - naming the wrong tool is how the
+1.2.0 bump ended up applied to the manifest by hand and to nothing else.
+`tests/test_manifest.py::test_the_version_is_the_same_in_all_three_places` fails when they drift.
 
 ```bash
-bump-my-version bump patch   # or minor / major
+bumpver update --patch   # or --minor / --major
 git push --follow-tags
 ```
 
@@ -103,4 +112,5 @@ Pushing a tag triggers `.github/workflows/release.yml`, which zips `custom_compo
 - CI: `pull_request.yml` (pre-commit + pytest), `hassfest.yml` (Home Assistant manifest
   validation), `hacs.yaml` (HACS validation), `codeql.yml`, `release.yml`.
 - Commit messages follow Conventional Commits; reference the issue in the scope, e.g. `fix(#2): resolve 500 server error in options flow`.
-- User-facing strings live in `custom_components/feedparser/strings.json` and must be mirrored into `custom_components/feedparser/translations/en.json`.
+- User-facing strings live in `custom_components/feedparser/strings.json` and must be mirrored into `custom_components/feedparser/translations/en.json` and `translations/de.json` (kept in full key parity).
+- A change to `unique_id` or to how options are stored needs a config entry migration in `async_migrate_entry` so existing installs keep their entities and history. `CONFIG_ENTRY_VERSION` and `FeedparserConfigFlow.VERSION` move together.
