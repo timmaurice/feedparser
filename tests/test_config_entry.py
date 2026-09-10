@@ -15,6 +15,8 @@ from custom_components.feedparser.config_flow import (
     FeedparserOptionsFlowHandler,
 )
 from custom_components.feedparser.const import (
+    CONF_EXCLUSIONS,
+    CONF_INCLUSIONS,
     CONF_MAX_TEXT_LENGTH,
     CONF_SHOW_TOPN,
     DEFAULT_MAX_TEXT_LENGTH,
@@ -27,7 +29,7 @@ from custom_components.feedparser.const import (
 # the constants happen to say.
 OLD_MATERIALISED_TOPN = 9999
 EXPECTED_TOPN = 5
-EXPECTED_VERSION = 2
+EXPECTED_VERSION = 3
 CHOSEN_TOPN = 20
 CHOSEN_OPTION_TOPN = 40
 
@@ -182,6 +184,65 @@ def test_migration_writes_the_new_version_through_home_assistant() -> None:
     assert hass.config_entries.updates[0]["version"] == CONFIG_ENTRY_VERSION
 
 
+def test_migration_turns_comma_strings_into_field_lists() -> None:
+    """Test that options written by the old text field become lists.
+
+    The options form stored what was typed - "title, published" - while the
+    entry data and YAML held a list, so the value had to be reinterpreted on
+    every poll. Converting it here is what keeps an existing entry filtering
+    exactly as it did.
+    """
+    entry = FakeConfigEntry(
+        {"feed_url": "https://example.com"},
+        options={
+            CONF_INCLUSIONS: "title, published , image",
+            CONF_EXCLUSIONS: "language",
+        },
+    )
+    migrate(entry)
+    assert entry.options[CONF_INCLUSIONS] == ["title", "published", "image"]
+    assert entry.options[CONF_EXCLUSIONS] == ["language"]
+
+
+def test_migration_leaves_a_field_list_alone() -> None:
+    """Test that a value that is already a list survives unchanged."""
+    entry = FakeConfigEntry(
+        {"feed_url": "https://example.com", CONF_INCLUSIONS: ["title", "link"]},
+    )
+    migrate(entry)
+    assert entry.data[CONF_INCLUSIONS] == ["title", "link"]
+
+
+def test_migration_does_not_invent_field_lists() -> None:
+    """Test that an entry that never set the fields does not gain them.
+
+    An empty list is not the same setting as "unset": it would be stored and
+    read back as "no inclusions", which happens to mean the same thing today,
+    but writing keys nobody configured into an entry is how a default becomes
+    impossible to change later.
+    """
+    entry = FakeConfigEntry({"feed_url": "https://example.com"})
+    migrate(entry)
+    assert CONF_INCLUSIONS not in entry.data
+    assert CONF_INCLUSIONS not in entry.options
+
+
+def test_migration_from_version_one_applies_every_step() -> None:
+    """Test that an entry that skipped a release gets both migrations."""
+    entry = FakeConfigEntry(
+        {
+            "feed_url": "https://example.com",
+            CONF_SHOW_TOPN: OLD_MATERIALISED_TOPN,
+            CONF_INCLUSIONS: "title,summary",
+        },
+        version=1,
+    )
+    migrate(entry)
+    assert entry.data[CONF_SHOW_TOPN] == EXPECTED_TOPN
+    assert entry.data[CONF_INCLUSIONS] == ["title", "summary"]
+    assert entry.version == EXPECTED_VERSION
+
+
 def options_schema() -> vol.Schema:
     """Return the schema the options form is built from."""
     flow = FeedparserOptionsFlowHandler()
@@ -210,3 +271,32 @@ def test_options_accept_the_values_the_field_is_for() -> None:
         schema({CONF_MAX_TEXT_LENGTH: DEFAULT_MAX_TEXT_LENGTH})[CONF_MAX_TEXT_LENGTH]
         == DEFAULT_MAX_TEXT_LENGTH
     )
+
+
+def test_options_store_the_fields_as_a_list() -> None:
+    """Test that the picker hands back a list, not the old comma string.
+
+    A text field accepted "Title,PUBLISHED" or a typo without a word and simply
+    filtered the entry down to nothing; the stored value also disagreed with
+    the list `data` and YAML use.
+    """
+    schema = options_schema()
+    validated = schema({CONF_INCLUSIONS: ["title", "published"]})
+    assert validated[CONF_INCLUSIONS] == ["title", "published"]
+
+
+def test_options_prefill_an_old_comma_string_as_chips() -> None:
+    """Test that an entry the migration has not reached still shows its fields.
+
+    `async_migrate_entry` converts them, but the form must not fall over on an
+    entry whose options are still a string - the reload order is not something
+    the options flow gets to assume.
+    """
+    flow = FeedparserOptionsFlowHandler()
+    flow.config_entry = FakeConfigEntry(  # type: ignore[assignment]
+        {"feed_url": "https://example.com"},
+        options={CONF_INCLUSIONS: "title, published"},
+    )
+    schema = asyncio.run(flow.async_step_init())["data_schema"]
+    defaults = schema({})
+    assert defaults[CONF_INCLUSIONS] == ["title", "published"]

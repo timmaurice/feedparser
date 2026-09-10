@@ -38,12 +38,14 @@
           "scan_interval": "Aktualisierungsintervall (Minuten)",
           "local_time": "Lokale Zeit verwenden",
           "remove_summary_image": "Bild aus der Zusammenfassung entfernen",
-          "inclusions": "Eingeschlossene Felder (kommagetrennt)",
-          "exclusions": "Ausgeschlossene Felder (kommagetrennt)"
+          "inclusions": "Eingeschlossene Felder",
+          "exclusions": "Ausgeschlossene Felder"
         },
         "data_description": {
           "scan_interval": "Wie oft der Feed abgerufen wird. Standard sind 60 Minuten.",
-          "max_text_length": "Lange Texte wie die Zusammenfassung werden auf so viele Zeichen gekürzt. Standard sind 250 Zeichen; mit 0 bleibt der vollständige Text erhalten."
+          "max_text_length": "Lange Texte wie die Zusammenfassung werden auf so viele Zeichen gekürzt. Standard sind 250 Zeichen; mit 0 bleibt der vollständige Text erhalten.",
+          "inclusions": "Nur diese Felder bleiben in jedem Eintrag erhalten. Leer lassen, um alle Felder des Feeds zu behalten.",
+          "exclusions": "Diese Felder werden aus jedem Eintrag entfernt."
         }
       }
     }

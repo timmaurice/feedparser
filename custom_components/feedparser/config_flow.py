@@ -14,6 +14,9 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
 )
 
 from .api import FeedparserAPI, FeedparserApiError
@@ -31,10 +34,12 @@ from .const import (
     DEFAULT_SCAN_INTERVAL_MINUTES,
     DEFAULT_TOPN,
     DOMAIN,
+    FILTERABLE_FIELDS,
     MAX_SCAN_INTERVAL_MINUTES,
     MIN_SCAN_INTERVAL_MINUTES,
     MIN_TOPN,
     NO_TEXT_LIMIT,
+    as_field_list,
 )
 from .parser import is_parsable_feed
 
@@ -64,6 +69,18 @@ MAX_TEXT_LENGTH_VALIDATOR = vol.All(vol.Coerce(int), vol.Range(min=NO_TEXT_LIMIT
 # and zero would produce a sensor with no entries at all. The YAML schema uses
 # cv.positive_int; one entry is the smallest request that means anything.
 SHOW_TOPN_VALIDATOR = vol.All(vol.Coerce(int), vol.Range(min=MIN_TOPN))
+
+# Chips rather than a text field, so the stored value is the list the rest of
+# the integration works with and a field name is picked instead of typed. The
+# field stays open for a custom value because a feed may carry any key.
+FIELD_SELECTOR = SelectSelector(
+    SelectSelectorConfig(
+        options=FILTERABLE_FIELDS,
+        multiple=True,
+        custom_value=True,
+        mode=SelectSelectorMode.DROPDOWN,
+    ),
+)
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -108,8 +125,10 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Feedparser."""
 
     # 2: show_topn values that were only the materialised old default (9999)
-    # are migrated to DEFAULT_TOPN by async_migrate_entry.
-    VERSION = 2
+    #    are migrated to DEFAULT_TOPN.
+    # 3: inclusions/exclusions stored as comma separated strings become lists.
+    # Both are handled by async_migrate_entry.
+    VERSION = 3
 
     async def async_step_user(
         self,
@@ -168,8 +187,6 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
         # Helper to get value from options or data
         def get_val(key, default):
             val = options.get(key, self.config_entry.data.get(key, default))
-            if isinstance(val, list):
-                return ", ".join([str(v) for v in val])
             return val if val is not None else default
 
         return self.async_show_form(
@@ -206,12 +223,12 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
                     ): bool,
                     vol.Optional(
                         CONF_INCLUSIONS,
-                        default=get_val(CONF_INCLUSIONS, ""),
-                    ): str,  # Comma separated for UI simplicity
+                        default=as_field_list(get_val(CONF_INCLUSIONS, [])),
+                    ): FIELD_SELECTOR,
                     vol.Optional(
                         CONF_EXCLUSIONS,
-                        default=get_val(CONF_EXCLUSIONS, ""),
-                    ): str,  # Comma separated for UI simplicity
+                        default=as_field_list(get_val(CONF_EXCLUSIONS, [])),
+                    ): FIELD_SELECTOR,
                 },
             ),
         )

@@ -57,6 +57,24 @@ MAX_SCAN_INTERVAL_MINUTES = 10080  # one week
 
 IMAGE_REGEX = r"<img.+?src=\"(.+?)\".+?>"
 
+# What the inclusions/exclusions pickers offer. Feeds carry whatever they like,
+# so the field stays open for a custom value - these are the keys that are
+# actually worth clicking, and having them as chips is what stops a typo from
+# quietly filtering an entry down to nothing.
+FILTERABLE_FIELDS = [
+    "title",
+    "link",
+    "summary",
+    "content",
+    "image",
+    "audio",
+    "published",
+    "updated",
+    "author",
+    "tags",
+    "id",
+]
+
 REQUEST_TIMEOUT = 30
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -75,6 +93,20 @@ REQUEST_HEADERS = {
 }
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def as_field_list(value: object) -> list[str]:
+    """Return an inclusions/exclusions setting as a list of field names.
+
+    Options used to be stored as the comma separated string the text field
+    handed over while `data` held a list, so both shapes are still out there:
+    entries written before the migration, and YAML.
+    """
+    if isinstance(value, str):
+        return [field.strip() for field in value.split(",") if field.strip()]
+    if isinstance(value, (list, tuple)):
+        return [str(field).strip() for field in value if str(field).strip()]
+    return []
 
 
 def scan_interval_from_minutes(value: str | int | float | None) -> timedelta:

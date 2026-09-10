@@ -23,6 +23,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL_MINUTES,
     DEFAULT_TOPN,
     DOMAIN,
+    as_field_list,
     scan_interval_from_minutes,
 )
 from .parser import FeedParserConfig, ParsedFeed, parse_feed
@@ -88,12 +89,6 @@ def build_coordinator(
         """Return a value from the options, falling back to the entry data."""
         return options.get(key, config.get(key, default))
 
-    def to_list(val: Any) -> list[str]:
-        """Handle inclusions/exclusions arriving as comma separated UI strings."""
-        if isinstance(val, str):
-            return [x.strip() for x in val.split(",") if x.strip()]
-        return val
-
     parser_config = FeedParserConfig(
         feed_url=config[CONF_FEED_URL],
         name=config[CONF_NAME],
@@ -101,8 +96,8 @@ def build_coordinator(
         show_topn=get_val(CONF_SHOW_TOPN, DEFAULT_TOPN),
         remove_summary_image=get_val(CONF_REMOVE_SUMMARY_IMG, False),
         max_text_length=int(get_val(CONF_MAX_TEXT_LENGTH, DEFAULT_MAX_TEXT_LENGTH)),
-        inclusions=to_list(get_val(CONF_INCLUSIONS, [])),
-        exclusions=to_list(get_val(CONF_EXCLUSIONS, [])),
+        inclusions=as_field_list(get_val(CONF_INCLUSIONS, [])),
+        exclusions=as_field_list(get_val(CONF_EXCLUSIONS, [])),
         local_time=get_val(CONF_LOCAL_TIME, False),
     )
     return FeedparserCoordinator(

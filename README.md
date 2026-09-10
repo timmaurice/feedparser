@@ -104,6 +104,12 @@ Note that the original `pubDate` field is available under `published` attribute 
 
 Note: Will return all fields if no inclusions or exclusions are specified
 
+In the UI, **Inclusions** and **Exclusions** are pickers: the common field names
+are offered for selection and anything else can still be typed in, and the
+choice is stored as a list — the same shape YAML uses. Entries configured
+before this, whose options held a comma separated string, are converted on
+upgrade and keep filtering exactly as they did.
+
 ### Keeping the state attributes small
 
 The entries end up in the `entries` state attribute, and Home Assistant's
