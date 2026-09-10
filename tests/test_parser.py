@@ -171,6 +171,46 @@ def test_the_image_pattern_matches_the_usual_img_spellings(markup: str) -> None:
     assert re.findall(IMAGE_REGEX, markup, re.S) == ["a.png"]
 
 
+SINGLE_QUOTED_IMAGE = "https://ex.com/a.png"
+# An Atom summary the feed declares as text: feedparser unescapes it and hands
+# it over without normalising the markup, so the single quotes reach the regex
+# exactly as the publisher wrote them.
+FEED_WITH_A_SINGLE_QUOTED_IMAGE = f"""<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Single quoted</title>
+  <entry>
+    <title>Has an image</title>
+    <summary type="text">
+      &lt;p&gt;Text.&lt;img src='{SINGLE_QUOTED_IMAGE}' alt='x'&gt;&lt;/p&gt;
+    </summary>
+  </entry>
+</feed>
+"""
+
+
+def test_a_single_quoted_image_is_found_and_removed() -> None:
+    """Test the image pattern through a feed, not only against itself.
+
+    The pattern was pinned at pattern level on the assumption that feedparser
+    normalises every summary the regex ever sees. It does not: a value the feed
+    declares as text is passed through as written, so a publisher's single
+    quoted `<img>` was neither found by the image fallback nor removed by
+    `remove_summary_image`.
+    """
+    config = FeedParserConfig(
+        feed_url="https://ex.com/feed.xml",
+        name="single",
+        date_format=DATE_FORMAT,
+        show_topn=1,
+        remove_summary_image=True,
+        max_text_length=NO_TEXT_LIMIT,
+    )
+    entry = parse_feed(FEED_WITH_A_SINGLE_QUOTED_IMAGE, config).entries[0]
+    assert entry["image"] == SINGLE_QUOTED_IMAGE
+    assert "<img" not in entry["summary"]
+    assert "Text." in entry["summary"]
+
+
 UNPARSABLE_DATE = "not a date at all"
 FEED_WITH_A_BROKEN_DATE = f"""<?xml version="1.0"?>
 <rss version="2.0"><channel>
