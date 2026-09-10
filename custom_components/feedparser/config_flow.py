@@ -23,14 +23,17 @@ from .const import (
     CONF_FEED_URL,
     CONF_INCLUSIONS,
     CONF_LOCAL_TIME,
+    CONF_MAX_TEXT_LENGTH,
     CONF_REMOVE_SUMMARY_IMG,
     CONF_SHOW_TOPN,
     DEFAULT_DATE_FORMAT,
+    DEFAULT_MAX_TEXT_LENGTH,
     DEFAULT_SCAN_INTERVAL_MINUTES,
     DEFAULT_TOPN,
     DOMAIN,
     MAX_SCAN_INTERVAL_MINUTES,
     MIN_SCAN_INTERVAL_MINUTES,
+    NO_TEXT_LIMIT,
 )
 
 if TYPE_CHECKING:
@@ -47,6 +50,11 @@ SCAN_INTERVAL_SELECTOR = NumberSelector(
         unit_of_measurement="min",
     ),
 )
+
+# A negative length would slip past `_truncate_entry`, which reads anything at
+# or below NO_TEXT_LIMIT as "keep the full text", and silently switch the
+# truncation off. The YAML schema uses cv.positive_int for the same reason.
+MAX_TEXT_LENGTH_VALIDATOR = vol.All(vol.Coerce(int), vol.Range(min=NO_TEXT_LIMIT))
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -67,7 +75,9 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Feedparser."""
 
-    VERSION = 1
+    # 2: show_topn values that were only the materialised old default (9999)
+    # are migrated to DEFAULT_TOPN by async_migrate_entry.
+    VERSION = 2
 
     async def async_step_user(
         self,
@@ -144,6 +154,12 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_SHOW_TOPN,
                         default=int(get_val(CONF_SHOW_TOPN, DEFAULT_TOPN)),
                     ): int,
+                    vol.Optional(
+                        CONF_MAX_TEXT_LENGTH,
+                        default=int(
+                            get_val(CONF_MAX_TEXT_LENGTH, DEFAULT_MAX_TEXT_LENGTH),
+                        ),
+                    ): MAX_TEXT_LENGTH_VALIDATOR,
                     vol.Optional(
                         CONF_SCAN_INTERVAL,
                         default=int(

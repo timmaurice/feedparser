@@ -14,10 +14,37 @@ CONF_INCLUSIONS = "inclusions"
 CONF_EXCLUSIONS = "exclusions"
 CONF_SHOW_TOPN = "show_topn"
 CONF_REMOVE_SUMMARY_IMG = "remove_summary_image"
+CONF_MAX_TEXT_LENGTH = "max_text_length"
 
 DEFAULT_DATE_FORMAT = "%a, %b %d %Y %I:%M %p"
 DEFAULT_SCAN_INTERVAL = timedelta(hours=1)
-DEFAULT_TOPN = 9999
+# The recorder refuses to store a state whose attributes are larger than this
+# (homeassistant.components.recorder.db_schema.MAX_STATE_ATTRS_BYTES).
+MAX_STATE_ATTRS_BYTES = 16384
+
+# Everything the sensor exposes ends up in those attributes, so keep the default
+# small - an unbounded default made the recorder reject the state on every poll.
+# Users who want more entries can still raise show_topn.
+DEFAULT_TOPN = 5
+
+# The number the old default stood for: "keep every entry the feed offers". It
+# is still what a YAML sensor without an explicit show_topn gets, and config
+# entries carrying it were never given that value deliberately - the config flow
+# materialised its own default into the entry - so the migration replaces it.
+UNLIMITED_TOPN = 9999
+
+# Feed entries carry whole articles in `summary`/`content`. Cut the text at this
+# many characters so a default sized feed stays well below the recorder limit.
+# Set max_text_length to NO_TEXT_LIMIT to keep the full text.
+DEFAULT_MAX_TEXT_LENGTH = 250
+NO_TEXT_LIMIT = 0
+TRUNCATION_SUFFIX = "..."
+
+# Values under these keys are URLs or identifiers - enclosure URLs in particular
+# get long, and a truncated one is a broken one.
+UNTRUNCATED_KEYS = frozenset(
+    {"link", "image", "audio", "href", "url", "id", "guid"},
+)
 
 # UI configured entries store the scan interval as a plain number of minutes.
 DEFAULT_SCAN_INTERVAL_MINUTES = int(DEFAULT_SCAN_INTERVAL.total_seconds() // 60)

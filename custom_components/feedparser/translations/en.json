@@ -33,6 +33,7 @@
         "data": {
           "date_format": "Date format",
           "show_topn": "Show top N entries",
+          "max_text_length": "Maximum text length (characters)",
           "scan_interval": "Update interval (minutes)",
           "local_time": "Use local time",
           "remove_summary_image": "Remove image from summary",
@@ -40,7 +41,8 @@
           "exclusions": "Exclusions (comma separated)"
         },
         "data_description": {
-          "scan_interval": "How often the feed is fetched. Default is 60 minutes."
+          "scan_interval": "How often the feed is fetched. Default is 60 minutes.",
+          "max_text_length": "Long text such as the summary is shortened to this many characters. Default is 250, 0 keeps the full text."
         }
       }
     }

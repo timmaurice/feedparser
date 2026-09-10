@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from contextlib import nullcontext, suppress
 from datetime import datetime, timedelta, timezone
@@ -15,13 +16,20 @@ from constants import DATE_FORMAT
 from feedsource import FeedSource
 
 from custom_components.feedparser.const import (
+    DEFAULT_MAX_TEXT_LENGTH,
     DEFAULT_SCAN_INTERVAL_MINUTES,
+    DEFAULT_TOPN,
     IMAGE_REGEX,
     MAX_SCAN_INTERVAL_MINUTES,
+    MAX_STATE_ATTRS_BYTES,
     MIN_SCAN_INTERVAL_MINUTES,
+    NO_TEXT_LIMIT,
+    TRUNCATION_SUFFIX,
+    UNTRUNCATED_KEYS,
     scan_interval_from_minutes,
 )
 from custom_components.feedparser.parser import (
+    _OVERSIZED_WARNED,
     FeedParserConfig,
     ParsedFeed,
     parse_feed,
@@ -29,6 +37,12 @@ from custom_components.feedparser.parser import (
 
 if TYPE_CHECKING:
     import time
+
+
+@pytest.fixture(autouse=True)
+def _forget_oversize_warnings() -> None:
+    """Let every test start out as a feed that has not warned yet."""
+    _OVERSIZED_WARNED.clear()
 
 
 def test_simple(parsed_feed: ParsedFeed) -> None:
@@ -92,6 +106,304 @@ def test_parse_feed(feed: FeedSource) -> None:
         assert any(
             "audio" in e for e in parsed.entries
         ), "Audio missing for feed that should have audio"
+
+
+ZEIT_VERBRECHEN = Path(__file__).parent / "data/zeit_verbrechen.xml"
+# What the numbers below are pinned to, spelled out once and on purpose: these
+# are the counts the integration must produce, not whatever the constants say.
+EXPECTED_DEFAULT_ENTRIES = 5
+EXPECTED_OVERRIDE_ENTRIES = 50
+
+
+def zeit_verbrechen_config(**overrides: object) -> FeedParserConfig:
+    """Return a config for the zeit_verbrechen fixture, 259 entries long."""
+    defaults: dict[str, object] = {
+        "feed_url": ZEIT_VERBRECHEN.absolute().as_uri(),
+        "name": "zeit_verbrechen",
+        "date_format": DATE_FORMAT,
+        "show_topn": DEFAULT_TOPN,
+    }
+    return FeedParserConfig(**(defaults | overrides))  # type: ignore[arg-type]
+
+
+def test_default_topn_caps_entries() -> None:
+    """Test that the default keeps the newest five entries and no more."""
+    # 259 entries in the fixture, five of them survive the default
+    parsed = parse_feed(ZEIT_VERBRECHEN.read_bytes(), zeit_verbrechen_config())
+    assert DEFAULT_TOPN == EXPECTED_DEFAULT_ENTRIES
+    assert len(parsed.entries) == EXPECTED_DEFAULT_ENTRIES
+    assert parsed.native_value == EXPECTED_DEFAULT_ENTRIES
+
+    newest = feedparser.parse(ZEIT_VERBRECHEN).entries[:EXPECTED_DEFAULT_ENTRIES]
+    assert [e["title"] for e in parsed.entries] == [e.title for e in newest]
+
+
+def test_show_topn_still_overrides_the_default() -> None:
+    """Test that a user asking for more entries still gets exactly that many."""
+    parsed = parse_feed(
+        ZEIT_VERBRECHEN.read_bytes(),
+        zeit_verbrechen_config(show_topn=EXPECTED_OVERRIDE_ENTRIES),
+    )
+    assert len(parsed.entries) == EXPECTED_OVERRIDE_ENTRIES
+    assert parsed.native_value == EXPECTED_OVERRIDE_ENTRIES
+
+
+def _text_values(value: object) -> list[str]:
+    """Return every string in a parsed entry that is not a URL or an id."""
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        return [text for item in value for text in _text_values(item)]
+    if isinstance(value, dict):
+        return [
+            text
+            for key, item in value.items()
+            if key not in UNTRUNCATED_KEYS
+            for text in _text_values(item)
+        ]
+    return []
+
+
+def test_long_entry_text_is_truncated() -> None:
+    """Test that whole articles are cut down before they reach the sensor."""
+    parsed = parse_feed(ZEIT_VERBRECHEN.read_bytes(), zeit_verbrechen_config())
+    assert parsed.entries
+
+    max_length = DEFAULT_MAX_TEXT_LENGTH + len(TRUNCATION_SUFFIX)
+    texts = [
+        text
+        for entry in parsed.entries
+        for key, value in entry.items()
+        if key not in UNTRUNCATED_KEYS
+        for text in _text_values(value)
+    ]
+    assert all(len(text) <= max_length for text in texts)
+    assert any(
+        TRUNCATION_SUFFIX in text for text in texts
+    ), "This fixture is expected to carry text long enough to be truncated"
+
+    # links are URLs, cutting them would only break them
+    assert all("://" in e["link"] for e in parsed.entries)
+
+
+HTML_FEED = """<?xml version="1.0"?>
+<rss version="2.0"><channel><title>html</title>
+<item>
+  <title>Broken markup</title>
+  <link>https://example.com/article</link>
+  <pubDate>Tue, 05 Mar 2024 09:00:00 +0000</pubDate>
+  <description>{summary}</description>
+</item>
+</channel></rss>"""
+
+
+def html_feed(summary: str) -> bytes:
+    """Return a one item feed whose summary is the given markup."""
+    return HTML_FEED.format(summary=summary).encode()
+
+
+def html_feed_config(**overrides: object) -> FeedParserConfig:
+    """Return a config for the synthetic HTML feed."""
+    defaults: dict[str, object] = {
+        "feed_url": "https://example.com/feed",
+        "name": "html",
+        "date_format": DATE_FORMAT,
+        "show_topn": DEFAULT_TOPN,
+    }
+    return FeedParserConfig(**(defaults | overrides))  # type: ignore[arg-type]
+
+
+def open_elements(fragment: str) -> list[str]:
+    """Return the elements left open in a fragment - a naive re-implementation."""
+    stack: list[str] = []
+    elements = re.findall(r"<\s*(/?)\s*([a-zA-Z][a-zA-Z0-9-]*)[^>]*>", fragment)
+    for closing, name in elements:
+        if closing:
+            assert stack, f"stray </{name}>"
+            assert stack[-1] == name.lower(), f"stray </{name}>"
+            stack.pop()
+        elif name.lower() not in {"img", "br", "hr"}:
+            stack.append(name.lower())
+    return stack
+
+
+def test_truncation_does_not_cut_html_apart() -> None:
+    """Test that a truncated summary is never a half written tag."""
+    # the anchor opens a few characters before the cut, so slicing the raw
+    # string at DEFAULT_MAX_TEXT_LENGTH would end inside its href
+    summary = (
+        "<p>"
+        + "word " * 45
+        + '<a href="https://example.com/a-very-long-target-url">linked words</a>'
+        + " and a tail long enough to be dropped " * 5
+        + "</p>"
+    )
+    assert len(summary) > DEFAULT_MAX_TEXT_LENGTH
+    assert summary.index("<a href") < DEFAULT_MAX_TEXT_LENGTH
+    assert summary.index("</a>") > DEFAULT_MAX_TEXT_LENGTH
+
+    truncated = parse_feed(html_feed(summary), html_feed_config()).entries[0]["summary"]
+
+    assert TRUNCATION_SUFFIX in truncated
+    assert len(truncated) <= DEFAULT_MAX_TEXT_LENGTH + len(TRUNCATION_SUFFIX)
+    # nothing of the anchor is left, and above all no fragment of its tag
+    assert "href" not in truncated
+    assert truncated.count("<") == truncated.count(">")
+    assert open_elements(truncated) == [], "the fragment leaves an element open"
+    assert truncated.startswith("<p>")
+    assert truncated.endswith(TRUNCATION_SUFFIX + "</p>")
+
+
+def test_truncation_closes_what_it_leaves_open() -> None:
+    """Test that markup that was still open at the cut is closed again."""
+    summary = "<p><strong>" + "word " * 100 + "</strong></p>"
+    truncated = parse_feed(html_feed(summary), html_feed_config()).entries[0]["summary"]
+    assert truncated.endswith(TRUNCATION_SUFFIX + "</strong></p>")
+    assert open_elements(truncated) == []
+
+
+def test_plain_text_is_cut_at_the_configured_length() -> None:
+    """Test that text without markup is cut exactly at the limit."""
+    summary = "abcdefghij" * 100
+    truncated = parse_feed(html_feed(summary), html_feed_config()).entries[0]["summary"]
+    assert truncated == summary[:DEFAULT_MAX_TEXT_LENGTH] + TRUNCATION_SUFFIX
+
+
+def test_max_text_length_can_be_raised() -> None:
+    """Test that a user can ask for more text than the default."""
+    summary = "abcdefghij" * 300
+    parsed = parse_feed(html_feed(summary), html_feed_config(max_text_length=1000))
+    assert parsed.entries[0]["summary"] == summary[:1000] + TRUNCATION_SUFFIX
+
+
+def test_max_text_length_zero_keeps_the_full_text() -> None:
+    """Test that the truncation can be switched off entirely."""
+    summary = "abcdefghij" * 300
+    parsed = parse_feed(
+        html_feed(summary),
+        html_feed_config(max_text_length=NO_TEXT_LIMIT),
+    )
+    assert parsed.entries[0]["summary"] == summary
+
+
+def test_oversized_attributes_are_logged(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that a user learns why the recorder drops their attributes."""
+    caplog.set_level(logging.WARNING)
+    parse_feed(
+        ZEIT_VERBRECHEN.read_bytes(),
+        zeit_verbrechen_config(show_topn=100, max_text_length=NO_TEXT_LIMIT),
+    )
+    assert any(
+        "zeit_verbrechen" in r.message and str(MAX_STATE_ATTRS_BYTES) in r.message
+        for r in caplog.records
+        if r.levelno == logging.WARNING
+    ), "no warning about the recorder limit was logged"
+
+
+def test_default_sized_feed_is_not_logged(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that a feed within the limit does not warn."""
+    caplog.set_level(logging.WARNING)
+    parse_feed(ZEIT_VERBRECHEN.read_bytes(), zeit_verbrechen_config())
+    assert not [r for r in caplog.records if r.levelno == logging.WARNING]
+
+
+def test_truncation_closes_the_inner_of_two_identical_tags() -> None:
+    """Test that a nested element of the same name is closed once each.
+
+    A summary that opens a second `<p>` inside the first is ordinary in RSS.
+    Closing the inner one must not be taken as closing the outer one too, or
+    the cut fragment is left with an unbalanced paragraph and no closing tag
+    is appended for it.
+    """
+    summary = (
+        "<p>" + "word " * 20 + "<p>inner</p>" + "tail words that go on " * 20 + "</p>"
+    )
+    assert summary.index("</p>") < DEFAULT_MAX_TEXT_LENGTH
+    truncated = parse_feed(html_feed(summary), html_feed_config()).entries[0]["summary"]
+
+    assert truncated.startswith("<p>")
+    assert truncated.endswith(TRUNCATION_SUFFIX + "</p>")
+    # the outer paragraph is still open at the cut and is closed again
+    assert truncated.count("<p>") == truncated.count("</p>")
+
+
+def test_truncation_does_not_cut_an_entity_before_a_later_tag() -> None:
+    """Test that an entity at the cut survives a tag sitting behind it.
+
+    The feed escapes the ampersand, so what reaches the truncation is the
+    literal text `&nbsp;` - a character entity the reader is meant to see.
+    It straddles the limit, and a `<br/>` sits further along; scanning the
+    tags before the entities lets that tag end the scan first and the entity
+    is cut into `&nbsp`.
+    """
+    keep = DEFAULT_MAX_TEXT_LENGTH - 5
+    summary = "w" * keep + "&amp;nbsp;" + " rest" * 30 + "<br/>"
+    truncated = parse_feed(html_feed(summary), html_feed_config()).entries[0]["summary"]
+
+    assert not truncated.endswith("&nbsp" + TRUNCATION_SUFFIX)
+    assert truncated == "w" * keep + TRUNCATION_SUFFIX
+
+
+def test_a_tag_too_long_to_keep_does_not_take_the_text_with_it() -> None:
+    """Test that an inline base64 image does not empty out the summary."""
+    inline_image = '<img src="data:image/png;base64,' + "A" * 2000 + '"/>'
+    text = "The words a reader actually came for, long enough to be cut. " * 10
+    summary = inline_image + text
+    assert len(inline_image) > DEFAULT_MAX_TEXT_LENGTH
+
+    truncated = parse_feed(html_feed(summary), html_feed_config()).entries[0]["summary"]
+
+    assert truncated != TRUNCATION_SUFFIX
+    assert truncated.startswith("The words a reader actually came for")
+    assert "base64" not in truncated
+    assert len(truncated) <= DEFAULT_MAX_TEXT_LENGTH + len(TRUNCATION_SUFFIX)
+
+
+def test_the_oversize_warning_is_not_repeated_on_every_poll(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that a polled feed logs the recorder warning once, not hourly."""
+    caplog.set_level(logging.WARNING)
+    config = zeit_verbrechen_config(show_topn=100, max_text_length=NO_TEXT_LIMIT)
+    for _ in range(3):
+        parse_feed(ZEIT_VERBRECHEN.read_bytes(), config)
+
+    warnings = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.WARNING and str(MAX_STATE_ATTRS_BYTES) in r.message
+    ]
+    assert len(warnings) == 1, "the same warning was logged on every poll"
+
+
+# One warning for each of the two configurations tried below.
+EXPECTED_WARNINGS_PER_SETTING = 2
+
+
+def test_the_oversize_warning_returns_when_the_settings_change(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that a user who changed the numbers is told they still do not fit."""
+    caplog.set_level(logging.WARNING)
+    parse_feed(
+        ZEIT_VERBRECHEN.read_bytes(),
+        zeit_verbrechen_config(show_topn=100, max_text_length=NO_TEXT_LIMIT),
+    )
+    parse_feed(
+        ZEIT_VERBRECHEN.read_bytes(),
+        zeit_verbrechen_config(show_topn=90, max_text_length=NO_TEXT_LIMIT),
+    )
+
+    warnings = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.WARNING and str(MAX_STATE_ATTRS_BYTES) in r.message
+    ]
+    assert len(warnings) == EXPECTED_WARNINGS_PER_SETTING
 
 
 def test_parse_feed_with_topn(feed: FeedSource) -> None:

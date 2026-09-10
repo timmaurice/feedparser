@@ -78,7 +78,8 @@ Note that the original `pubDate` field is available under `published` attribute 
 | **feed_url (Required)**      | The RSS feed URL                                                       |
 | **date_format (Optional)**   | strftime date format for date strings **Default** `%a, %b %d %I:%M %p` |
 | **local_time (Optional)**    | Whether to convert date into local time **Default** false              |
-| **show_topn (Optional)**     | fetch how many entres from rss source，if not set then fetch all       |
+| **show_topn (Optional)**     | How many entries to fetch from the feed. **Default** in YAML: all entries |
+| **max_text_length (Optional)** | Characters kept per text field, `0` keeps the full text **Default** `250` |
 | **inclusions (Optional)**    | List of fields to include from populating the list                     |
 | **exclusions (Optional)**    | List of fields to exclude from populating the list                     |
 | **scan_interval (Optional)** | Update interval in hours                                               |
@@ -86,6 +87,33 @@ Note that the original `pubDate` field is available under `published` attribute 
 ---
 
 Note: Will return all fields if no inclusions or exclusions are specified
+
+### Keeping the state attributes small
+
+The entries end up in the `entries` state attribute, and Home Assistant's
+recorder drops the attributes of a state larger than 16 KiB, which leaves the
+sensor with a history that has no entries in it. Two settings keep a feed under
+that limit:
+
+- `show_topn` — how many entries are exposed. Feeds added through the UI default
+  to the newest **5**. YAML sensors are **not** capped: the sensor's state is the
+  number of entries, so a default would change the meaning of an existing
+  recorder history and of any template comparing that state. A YAML sensor keeps
+  every entry until you set `show_topn` yourself.
+- `max_text_length` — how many characters of long text such as `summary` or
+  `content` are kept, **250** by default. Values that fit are stored unchanged;
+  longer ones are cut at a tag boundary and any markup left open is closed
+  again, so a truncated summary is never a half written tag. Set it to `0` to
+  switch the shortening off and keep the full article text — sensible for a
+  short feed with narrow `inclusions`.
+
+If the attributes are too large anyway, the integration logs a warning naming
+the size and the limit, so the reason for an empty history is visible in the log.
+
+Feeds that were added through the UI before the `show_topn` default existed were
+stored with the old value of `9999` — the form's default, not a choice anyone
+made. Those are migrated to `5` on upgrade. A `show_topn` you picked yourself is
+never changed.
 
 Due to how `custom_components` are loaded, it is normal to see a `ModuleNotFoundError` error on first boot after adding this, to resolve it, restart Home-Assistant.
 

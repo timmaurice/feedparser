@@ -17,12 +17,14 @@ from .const import (
     CONF_FEED_URL,
     CONF_INCLUSIONS,
     CONF_LOCAL_TIME,
+    CONF_MAX_TEXT_LENGTH,
     CONF_REMOVE_SUMMARY_IMG,
     CONF_SHOW_TOPN,
     DEFAULT_DATE_FORMAT,
+    DEFAULT_MAX_TEXT_LENGTH,
     DEFAULT_SCAN_INTERVAL,
-    DEFAULT_TOPN,
     DOMAIN,
+    UNLIMITED_TOPN,
 )
 from .coordinator import FeedparserCoordinator
 from .parser import FeedParserConfig
@@ -41,7 +43,15 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Required(CONF_FEED_URL): cv.string,
         vol.Required(CONF_DATE_FORMAT, default=DEFAULT_DATE_FORMAT): cv.string,
         vol.Optional(CONF_LOCAL_TIME, default=False): cv.boolean,
-        vol.Optional(CONF_SHOW_TOPN, default=DEFAULT_TOPN): cv.positive_int,
+        # A YAML sensor that never set show_topn keeps every entry, the way it
+        # always did. The sensor's state is the number of entries, so capping it
+        # here would rewrite the meaning of an existing recorder history and of
+        # every template comparing that state.
+        vol.Optional(CONF_SHOW_TOPN, default=UNLIMITED_TOPN): cv.positive_int,
+        vol.Optional(
+            CONF_MAX_TEXT_LENGTH,
+            default=DEFAULT_MAX_TEXT_LENGTH,
+        ): cv.positive_int,
         vol.Optional(CONF_REMOVE_SUMMARY_IMG, default=False): cv.boolean,
         vol.Optional(CONF_INCLUSIONS, default=[]): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(CONF_EXCLUSIONS, default=[]): vol.All(cv.ensure_list, [cv.string]),
@@ -65,6 +75,7 @@ async def async_setup_platform(
         date_format=config[CONF_DATE_FORMAT],
         show_topn=config[CONF_SHOW_TOPN],
         remove_summary_image=config[CONF_REMOVE_SUMMARY_IMG],
+        max_text_length=config[CONF_MAX_TEXT_LENGTH],
         inclusions=config[CONF_INCLUSIONS],
         exclusions=config[CONF_EXCLUSIONS],
         local_time=config[CONF_LOCAL_TIME],
@@ -93,7 +104,9 @@ class FeedParserSensor(CoordinatorEntity[FeedparserCoordinator], SensorEntity):
     """Representation of a Feedparser sensor."""
 
     _attr_has_entity_name = True
-    _attr_force_update = True
+    # No force_update: Home Assistant already writes a new state whenever the
+    # attributes change, so forcing one only makes every poll of an unchanged
+    # feed a recorder write.
     _attr_icon = "mdi:rss"
     _attr_attribution = "Data retrieved using RSS feedparser"
 
