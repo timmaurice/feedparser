@@ -57,9 +57,12 @@ class FakeConfigEntries:
         """Initialize."""
         self.updates: list[dict[str, Any]] = []
 
-    # What `hass.config_entries.async_update_entry` accepts. Spelled out so a
-    # call passing anything else - `version=` on a Home Assistant too old to
-    # know it, above all - fails here instead of only in production.
+    # What `hass.config_entries.async_update_entry` accepts from Home Assistant
+    # 2026.1 on, which is the version `hacs.json` requires. Spelled out so a
+    # call passing a keyword no Home Assistant takes fails here rather than in
+    # production. It cannot catch `version=` against an older core - the fake
+    # accepts it, exactly as the supported one does - so a core below 2026.1 is
+    # a compatibility question for `hacs.json`, not something this suite pins.
     ACCEPTED = frozenset({"data", "options", "version", "title", "unique_id"})
 
     def async_update_entry(
@@ -156,10 +159,11 @@ def test_new_entries_are_created_with_the_capped_default() -> None:
 def test_the_fake_rejects_what_home_assistant_would_reject() -> None:
     """Test that the double is strict about the keywords it is called with.
 
-    A fake that swallows `**kwargs` would let the migration pass a keyword
-    Home Assistant does not take and no test would notice, which is exactly
-    what `version=` is - accepted from 2026.1 on, the version `hacs.json`
-    requires, and rejected by an older core.
+    A fake that swallows `**kwargs` would let the migration pass a keyword no
+    Home Assistant takes and no test would notice. `version=` is not such a
+    keyword: it is accepted from 2026.1 on, which is what `hacs.json` requires,
+    and the fake accepts it for the same reason - so it is pinned as accepted,
+    not as rejected.
     """
     entries = FakeConfigEntries()
     entry = FakeConfigEntry({"feed_url": "https://example.com"})
