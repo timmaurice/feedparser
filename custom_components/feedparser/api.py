@@ -26,11 +26,11 @@ class FeedparserApiError(Exception):
 class FeedparserAPI:
     """Fetches raw feed content over HTTP(S) or from a local file."""
 
-    def __init__(self, hass: HomeAssistant) -> None:
+    def __init__(self: FeedparserAPI, hass: HomeAssistant) -> None:
         """Initialize the API client."""
         self.hass = hass
 
-    async def async_fetch(self, url: str) -> bytes:
+    async def async_fetch(self: FeedparserAPI, url: str) -> bytes:
         """Return the raw content of a feed.
 
         `file://` URLs are read from disk in the executor; everything else goes
@@ -40,7 +40,7 @@ class FeedparserAPI:
             return await self._async_read_file(url)
         return await self._async_get(url)
 
-    async def _async_get(self, url: str) -> bytes:
+    async def _async_get(self: FeedparserAPI, url: str) -> bytes:
         """Fetch a feed over HTTP(S)."""
         session = async_get_clientsession(self.hass)
         try:
@@ -55,7 +55,7 @@ class FeedparserAPI:
             msg = f"Error fetching feed from {url}: {err}"
             raise FeedparserApiError(msg) from err
 
-    async def _async_read_file(self, url: str) -> bytes:
+    async def _async_read_file(self: FeedparserAPI, url: str) -> bytes:
         """Read a feed from a local `file://` URL."""
         path = Path(unquote(urlparse(url).path))
         try:

@@ -131,7 +131,7 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 4
 
     async def async_step_user(
-        self,
+        self: FeedparserConfigFlow,
         user_input: dict[str, Any] | None = None,
     ) -> FlowResult:
         """Handle the initial step."""
@@ -161,7 +161,7 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(
-        config_entry: config_entries.ConfigEntry,
+        config_entry: config_entries.ConfigEntry,  # noqa: ARG004
     ) -> config_entries.OptionsFlow:
         """Get the options flow for this handler."""
         return FeedparserOptionsFlowHandler()
@@ -171,7 +171,7 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle Feedparser options."""
 
     async def async_step_init(
-        self,
+        self: FeedparserOptionsFlowHandler,
         user_input: dict[str, Any] | None = None,
     ) -> FlowResult:
         """Manage the options."""
@@ -182,11 +182,19 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
             )
             return self.async_create_entry(title="", data=user_input)
 
-        options = self.config_entry.options
+        # From core 2024.11 on `OptionsFlow.config_entry` is a read-only
+        # property that resolves the entry this flow was opened for, which is
+        # why the handler takes none and stores none. The newest stubs that
+        # install on the Python the hooks run under stop at core 2024.3, where
+        # the attribute does not exist yet, so mypy cannot see it - a gap in
+        # the pinned stubs, not in the code. hacs.json requires 2026.1.
+        entry = self.config_entry  # type: ignore[attr-defined]
+        options = entry.options
 
-        # Helper to get value from options or data
-        def get_val(key, default):
-            val = options.get(key, self.config_entry.data.get(key, default))
+        # Helper to get value from options or data. A config entry is an
+        # untyped mapping, so what comes back out of it is genuinely `Any`.
+        def get_val(key: str, default: Any) -> Any:  # noqa: ANN401
+            val = options.get(key, entry.data.get(key, default))
             return val if val is not None else default
 
         return self.async_show_form(
@@ -215,11 +223,11 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
                     ): SCAN_INTERVAL_SELECTOR,
                     vol.Optional(
                         CONF_LOCAL_TIME,
-                        default=bool(get_val(CONF_LOCAL_TIME, False)),
+                        default=bool(get_val(CONF_LOCAL_TIME, default=False)),
                     ): bool,
                     vol.Optional(
                         CONF_REMOVE_SUMMARY_IMG,
-                        default=bool(get_val(CONF_REMOVE_SUMMARY_IMG, False)),
+                        default=bool(get_val(CONF_REMOVE_SUMMARY_IMG, default=False)),
                     ): bool,
                     vol.Optional(
                         CONF_INCLUSIONS,

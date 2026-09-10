@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import voluptuous as vol
@@ -95,7 +95,8 @@ class FakeHass:
 def migrate(entry: FakeConfigEntry) -> FakeHass:
     """Run the migration against a fake hass and return it."""
     hass = FakeHass()
-    assert asyncio.run(async_migrate_entry(hass, entry)) is True  # type: ignore[arg-type]
+    migrated = asyncio.run(async_migrate_entry(hass, entry))  # type: ignore[arg-type]
+    assert migrated is True
     return hass
 
 
@@ -247,11 +248,31 @@ def test_migration_from_version_one_applies_every_step() -> None:
     assert entry.version == EXPECTED_VERSION
 
 
-def options_schema() -> vol.Schema:
-    """Return the schema the options form is built from."""
+def options_flow_for(entry: FakeConfigEntry) -> FeedparserOptionsFlowHandler:
+    """Return an options flow handler wired to a fake config entry.
+
+    The handler reads `self.config_entry` off the Home Assistant base class.
+    From core 2024.11 on that is a read-only property resolving the entry from
+    `hass` via the flow's handler id, so a real core needs no wiring here at
+    all - and would refuse this assignment. The core the suite is pinned to has
+    no such attribute, so the double has to be set directly. Assigning it is a
+    property of the test environment, not of how the flow is used.
+    """
     flow = FeedparserOptionsFlowHandler()
-    flow.config_entry = FakeConfigEntry({"feed_url": "https://example.com"})  # type: ignore[assignment]
-    return asyncio.run(flow.async_step_init())["data_schema"]
+    flow.config_entry = entry  # type: ignore[assignment,attr-defined]
+    return flow
+
+
+def schema_of(flow: FeedparserOptionsFlowHandler) -> vol.Schema:
+    """Return the schema the options form is built from."""
+    data_schema = asyncio.run(flow.async_step_init())["data_schema"]
+    return cast(vol.Schema, data_schema)
+
+
+def options_schema() -> vol.Schema:
+    """Return the schema a fresh entry's options form is built from."""
+    entry = FakeConfigEntry({"feed_url": "https://example.com"})
+    return schema_of(options_flow_for(entry))
 
 
 def test_options_reject_a_negative_max_text_length() -> None:
@@ -296,13 +317,13 @@ def test_options_prefill_an_old_comma_string_as_chips() -> None:
     entry whose options are still a string - the reload order is not something
     the options flow gets to assume.
     """
-    flow = FeedparserOptionsFlowHandler()
-    flow.config_entry = FakeConfigEntry(  # type: ignore[assignment]
-        {"feed_url": "https://example.com"},
-        options={CONF_INCLUSIONS: "title, published"},
+    flow = options_flow_for(
+        FakeConfigEntry(
+            {"feed_url": "https://example.com"},
+            options={CONF_INCLUSIONS: "title, published"},
+        ),
     )
-    schema = asyncio.run(flow.async_step_init())["data_schema"]
-    defaults = schema({})
+    defaults = schema_of(flow)({})
     assert defaults[CONF_INCLUSIONS] == ["title", "published"]
 
 

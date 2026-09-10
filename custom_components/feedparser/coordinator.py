@@ -41,7 +41,7 @@ class FeedparserCoordinator(DataUpdateCoordinator[ParsedFeed]):
     """Fetches a feed and keeps the parsed result for its sensor."""
 
     def __init__(
-        self,
+        self: FeedparserCoordinator,
         hass: HomeAssistant,
         config: FeedParserConfig,
         update_interval: timedelta,
@@ -56,7 +56,7 @@ class FeedparserCoordinator(DataUpdateCoordinator[ParsedFeed]):
         self.config = config
         self.api = FeedparserAPI(hass)
 
-    async def _async_update_data(self) -> ParsedFeed:
+    async def _async_update_data(self: FeedparserCoordinator) -> ParsedFeed:
         """Fetch and parse the feed."""
         _LOGGER.debug(
             "Feed %s: Polling feed data from %s",
@@ -85,7 +85,9 @@ def build_coordinator(
     config = entry.data
     options = entry.options
 
-    def get_val(key: str, default: Any) -> Any:
+    # A config entry is an untyped mapping, so what comes back out of it is
+    # genuinely `Any` - the caller narrows it.
+    def get_val(key: str, default: Any) -> Any:  # noqa: ANN401
         """Return a value from the options, falling back to the entry data."""
         return options.get(key, config.get(key, default))
 
@@ -94,11 +96,11 @@ def build_coordinator(
         name=config[CONF_NAME],
         date_format=get_val(CONF_DATE_FORMAT, DEFAULT_DATE_FORMAT),
         show_topn=get_val(CONF_SHOW_TOPN, DEFAULT_TOPN),
-        remove_summary_image=get_val(CONF_REMOVE_SUMMARY_IMG, False),
+        remove_summary_image=get_val(CONF_REMOVE_SUMMARY_IMG, default=False),
         max_text_length=int(get_val(CONF_MAX_TEXT_LENGTH, DEFAULT_MAX_TEXT_LENGTH)),
         inclusions=as_field_list(get_val(CONF_INCLUSIONS, [])),
         exclusions=as_field_list(get_val(CONF_EXCLUSIONS, [])),
-        local_time=get_val(CONF_LOCAL_TIME, False),
+        local_time=get_val(CONF_LOCAL_TIME, default=False),
     )
     return FeedparserCoordinator(
         hass,

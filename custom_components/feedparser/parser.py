@@ -333,7 +333,10 @@ def _resolve_url(url: str | None, config: FeedParserConfig) -> str:
     return urljoin(config.feed_url, safe)
 
 
-def generate_sensor_entry(
+# Flat dispatch over the keys a feed entry can carry: the branch count is the
+# shape of the data, not tangled control flow. Splitting it is worth doing on
+# its own, away from a QA round that must not move the parser's behaviour.
+def generate_sensor_entry(  # noqa: C901
     feed_entry: FeedParserDict,
     config: FeedParserConfig,
 ) -> dict[str, Any]:
@@ -508,7 +511,9 @@ def parse_date(date: object, config: FeedParserConfig) -> datetime | None:
     return parsed_time
 
 
-def process_image(
+# Four independent places a feed can put an image, tried in order of how much
+# the feed tells us about them. Same reasoning as `generate_sensor_entry`.
+def process_image(  # noqa: C901
     feed_entry: FeedParserDict,
     config: FeedParserConfig,
 ) -> str | None:

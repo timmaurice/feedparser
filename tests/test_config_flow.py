@@ -61,7 +61,9 @@ def validate(
 ) -> str | None:
     """Run the flow's validation against a fetch with the given outcome."""
     monkeypatch.setattr(config_flow, "FeedparserAPI", fetching(result))
-    return asyncio.run(async_validate_feed(FakeHass(), FEED_URL))  # type: ignore[arg-type]
+    return asyncio.run(
+        async_validate_feed(FakeHass(), FEED_URL),  # type: ignore[arg-type]
+    )
 
 
 def test_a_real_feed_is_accepted(monkeypatch: pytest.MonkeyPatch) -> None:

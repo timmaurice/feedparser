@@ -125,7 +125,9 @@ def test_a_yaml_sensor_has_a_unique_id() -> None:
     An entity without a unique_id is not in the entity registry at all, which
     is what left YAML feeds unmanageable in the UI.
     """
-    sensor = FeedParserSensor(FakeCoordinator(parser_config()))  # type: ignore[arg-type]
+    sensor = FeedParserSensor(
+        FakeCoordinator(parser_config()),  # type: ignore[arg-type]
+    )
     assert sensor.unique_id
     assert sensor._attr_name == "ntv"  # noqa: SLF001
     assert sensor.device_info is None
@@ -145,8 +147,8 @@ def test_two_yaml_sensors_on_one_feed_do_not_collide() -> None:
 
 def test_a_ui_sensor_is_grouped_under_a_device() -> None:
     """Test that a config entry's entity gets a device to sit on."""
-    sensor = FeedParserSensor(  # type: ignore[arg-type]
-        FakeCoordinator(parser_config()),
+    sensor = FeedParserSensor(
+        FakeCoordinator(parser_config()),  # type: ignore[arg-type]
         entry_id=ENTRY_ID,
     )
     assert sensor.unique_id == ENTRY_ID

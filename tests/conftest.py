@@ -60,4 +60,6 @@ def parse_local_feed(feed: FeedSource, **overrides: object) -> ParsedFeed:
 
 def local_feed_config(feed: FeedSource, **overrides: object) -> FeedParserConfig:
     """Build a FeedParserConfig pointing at the local feed fixture."""
-    return FeedParserConfig(**(feed.parser_config_local_feed | overrides))  # type: ignore[arg-type]
+    return FeedParserConfig(
+        **(feed.parser_config_local_feed | overrides),  # type: ignore[arg-type]
+    )
