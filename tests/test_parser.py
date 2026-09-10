@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from contextlib import nullcontext, suppress
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -675,7 +675,7 @@ def test_parse_feed_entries_time(
     first_entry_struct_time: time.struct_time = entry.published_parsed
     first_entry_time: datetime = datetime(
         *first_entry_struct_time[:6],
-        tzinfo=timezone.utc,
+        tzinfo=UTC,
     )
 
     # get the time of the first parsed entry
@@ -685,7 +685,7 @@ def test_parse_feed_entries_time(
     )
 
     if not first_parsed_entry_time.tzinfo:
-        first_parsed_entry_time = first_parsed_entry_time.replace(tzinfo=timezone.utc)
+        first_parsed_entry_time = first_parsed_entry_time.replace(tzinfo=UTC)
 
     # assert that the time of the first parsed entry is equal to
     # the time of the first entry in the feed

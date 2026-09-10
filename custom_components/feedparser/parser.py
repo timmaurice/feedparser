@@ -11,7 +11,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any
 from urllib.parse import urljoin
 
@@ -480,7 +480,7 @@ def parse_date(date: object, config: FeedParserConfig) -> datetime | None:
             config.name,
             date,
         )
-        parsed_time = parsed_time.replace(tzinfo=timezone.utc)
+        parsed_time = parsed_time.replace(tzinfo=UTC)
     if not parsed_time.tzname():
         # A named offset is what strftime needs. `timezone()` refuses one of a
         # day or more, which a feed can send - `+9999` parses fine and only
