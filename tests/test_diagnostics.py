@@ -1,0 +1,165 @@
+"""Tests the diagnostics platform and the entity identity of a sensor."""
+
+from __future__ import annotations
+
+import asyncio
+from typing import Any
+
+from constants import DATA_PATH
+
+from custom_components.feedparser.const import DOMAIN, MAX_STATE_ATTRS_BYTES
+from custom_components.feedparser.diagnostics import (
+    async_get_config_entry_diagnostics,
+    redact_url,
+)
+from custom_components.feedparser.parser import FeedParserConfig, parse_feed
+from custom_components.feedparser.sensor import (
+    FeedParserSensor,
+    device_info,
+    yaml_unique_id,
+)
+
+FEED = DATA_PATH / "ntv.xml"
+ENTRY_ID = "01JABCDEF0123456789"
+DATE_FORMAT = "%a, %d %b %Y %H:%M:%S"
+# What the fixture is asked for, spelled out so the assertions read as counts.
+SHOWN_ENTRIES = 3
+ENTRY_VERSION = 3
+
+
+def parser_config(**overrides: Any) -> FeedParserConfig:  # noqa: ANN401
+    """Return a config pointing at a shipped fixture."""
+    defaults: dict[str, Any] = {
+        "feed_url": FEED.absolute().as_uri(),
+        "name": "ntv",
+        "date_format": DATE_FORMAT,
+        "show_topn": SHOWN_ENTRIES,
+    }
+    return FeedParserConfig(**(defaults | overrides))
+
+
+class FakeCoordinator:
+    """The parts of the coordinator diagnostics and the entity read."""
+
+    def __init__(self: FakeCoordinator, config: FeedParserConfig) -> None:
+        """Initialize."""
+        self.config = config
+        self.data = parse_feed(FEED.read_bytes(), config)
+        self.last_update_success = True
+        self.update_interval = None
+
+
+class FakeEntry:
+    """The parts of a config entry diagnostics reads."""
+
+    version = ENTRY_VERSION
+    entry_id = ENTRY_ID
+
+    def __init__(self: FakeEntry, data: dict[str, Any]) -> None:
+        """Initialize."""
+        self.data = data
+        self.options: dict[str, Any] = {"show_topn": SHOWN_ENTRIES}
+
+
+class FakeHass:
+    """Just enough of hass to hold a coordinator."""
+
+    def __init__(self: FakeHass, coordinator: FakeCoordinator) -> None:
+        """Initialize."""
+        self.data = {DOMAIN: {ENTRY_ID: coordinator}}
+
+
+def diagnostics(url: str = "https://example.com/feed.xml") -> dict[str, Any]:
+    """Run the diagnostics platform against a parsed fixture."""
+    coordinator = FakeCoordinator(parser_config())
+    hass = FakeHass(coordinator)
+    entry = FakeEntry({"name": "ntv", "feed_url": url})
+    return asyncio.run(
+        async_get_config_entry_diagnostics(hass, entry),  # type: ignore[arg-type]
+    )
+
+
+def test_diagnostics_report_the_last_poll() -> None:
+    """Test that the download says what the feed produced.
+
+    Without it, a report about entries that are missing or a history without
+    attributes has nothing in it to tell those two apart.
+    """
+    report = diagnostics()
+    assert report["feed"]["entry_count"] == SHOWN_ENTRIES
+    assert report["feed"]["state"] == SHOWN_ENTRIES
+    assert "title" in report["feed"]["entry_keys"]
+    assert report["feed"]["channel_keys"]
+    assert report["coordinator"]["last_update_success"] is True
+    assert report["entry"]["version"] == ENTRY_VERSION
+    assert report["parser_config"]["show_topn"] == SHOWN_ENTRIES
+    assert report["feed"]["recorder_limit_bytes"] == MAX_STATE_ATTRS_BYTES
+    assert report["feed"]["state_attributes_bytes"] > 0
+    assert report["feed"]["exceeds_recorder_limit"] in (True, False)
+
+
+def test_diagnostics_keep_the_entries_out() -> None:
+    """Test that the download reports the shape of the entries, not the text."""
+    report = diagnostics()
+    assert "entries" not in report["feed"]
+    assert all(isinstance(key, str) for key in report["feed"]["entry_keys"])
+
+
+def test_diagnostics_redact_a_secret_in_the_feed_url() -> None:
+    """Test that a token in the URL does not travel into a GitHub issue."""
+    report = diagnostics("https://user:pw@example.com/feed.xml?api_key=hunter2")
+    reported = report["entry"]["data"]["feed_url"]
+    assert "hunter2" not in reported
+    assert "pw@" not in reported
+    assert "example.com/feed.xml" in reported
+
+
+def test_redact_url_keeps_a_plain_url_readable() -> None:
+    """Test that a URL with nothing to hide is reported as it is."""
+    assert redact_url("https://example.com/rss") == "https://example.com/rss"
+
+
+def test_a_yaml_sensor_has_a_unique_id() -> None:
+    """Test that a YAML feed can be renamed and put in an area.
+
+    An entity without a unique_id is not in the entity registry at all, which
+    is what left YAML feeds unmanageable in the UI.
+    """
+    sensor = FeedParserSensor(FakeCoordinator(parser_config()))  # type: ignore[arg-type]
+    assert sensor.unique_id
+    assert sensor._attr_name == "ntv"  # noqa: SLF001
+    assert sensor.device_info is None
+
+
+def test_two_yaml_sensors_on_one_feed_do_not_collide() -> None:
+    """Test that the name is part of the id.
+
+    Two YAML sensors may watch the same feed under different names, and a
+    shared unique_id would make Home Assistant drop the second entity.
+    """
+    first = yaml_unique_id(parser_config(name="one"))
+    second = yaml_unique_id(parser_config(name="two"))
+    assert first != second
+    assert first == yaml_unique_id(parser_config(name="one"))
+
+
+def test_a_ui_sensor_is_grouped_under_a_device() -> None:
+    """Test that a config entry's entity gets a device to sit on."""
+    sensor = FeedParserSensor(  # type: ignore[arg-type]
+        FakeCoordinator(parser_config()),
+        entry_id=ENTRY_ID,
+    )
+    assert sensor.unique_id == ENTRY_ID
+    assert sensor.device_info is not None
+    assert sensor.device_info["identifiers"] == {(DOMAIN, ENTRY_ID)}
+    assert sensor.device_info["name"] == "ntv"
+    # The device carries the name, so the entity must not append its own -
+    # otherwise the friendly name of an existing sensor becomes "ntv ntv".
+    assert sensor._attr_name is None  # noqa: SLF001
+
+
+def test_a_file_feed_gets_no_configuration_url() -> None:
+    """Test that only a URL a browser can open reaches the device page."""
+    assert "configuration_url" not in device_info(parser_config(), ENTRY_ID)
+    web = device_info(parser_config(feed_url="https://example.com/f.xml"), ENTRY_ID)
+    assert web["configuration_url"] == "https://example.com/f.xml"

@@ -21,7 +21,8 @@ The integration supports both UI configuration (config flow, recommended) and le
 | `parser.py` | Pure parsing. `parse_feed(content, FeedParserConfig) -> ParsedFeed`. No network, no config entries — this is what the test suite exercises directly. |
 | `coordinator.py` | `FeedparserCoordinator` (a `DataUpdateCoordinator`) ties the two together and owns the polling interval. `build_coordinator(hass, entry)` maps a config entry onto it. |
 | `sensor.py` | `FeedParserSensor`, a `CoordinatorEntity`. Holds no fetch or parse logic. Also carries the legacy YAML `PLATFORM_SCHEMA`. |
-| `config_flow.py` | UI setup and options. Validates the feed URL through `api.py`. |
+| `config_flow.py` | UI setup and options. Validates that the URL is reachable through `api.py` and that the response parses as a feed. |
+| `diagnostics.py` | `async_get_config_entry_diagnostics` — settings, last poll result and attribute size for a config entry. Reports keys, never entry text; redacts the feed URL's query string and userinfo. |
 
 Feeds are polled by the coordinator's `update_interval`; the entity does not poll itself. Parsing runs in the executor because it is CPU-bound on large feeds.
 
@@ -103,4 +104,5 @@ Pushing a tag triggers `.github/workflows/release.yml`, which zips `custom_compo
 - CI: `pull_request.yml` (pre-commit + pytest), `hassfest.yml` (Home Assistant manifest
   validation), `hacs.yaml` (HACS validation), `codeql.yml`, `release.yml`.
 - Commit messages follow Conventional Commits; reference the issue in the scope, e.g. `fix(#2): resolve 500 server error in options flow`.
-- User-facing strings live in `custom_components/feedparser/strings.json` and must be mirrored into `custom_components/feedparser/translations/en.json`.
+- User-facing strings live in `custom_components/feedparser/strings.json` and must be mirrored into `custom_components/feedparser/translations/en.json` and `translations/de.json` (kept in full key parity).
+- A change to `unique_id` or to how options are stored needs a config entry migration in `async_migrate_entry` so existing installs keep their entities and history. `CONFIG_ENTRY_VERSION` and `FeedparserConfigFlow.VERSION` move together.

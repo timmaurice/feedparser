@@ -110,6 +110,22 @@ choice is stored as a list — the same shape YAML uses. Entries configured
 before this, whose options held a comma separated string, are converted on
 upgrade and keep filtering exactly as they did.
 
+### Entities, devices and diagnostics
+
+Each feed added through the UI gets a device of its own, named after the feed
+and linking to the feed URL, with the sensor as its single entity. The entity
+keeps the name and the entity id it already had.
+
+YAML feeds now have a stable unique id as well (derived from the feed URL and
+the name), so they show up in the entity registry and can be renamed, hidden or
+assigned to an area like any other entity. They keep their entity id.
+
+A **Download diagnostics** button on the config entry reports the settings in
+effect, whether the last poll succeeded, how many entries and which keys came
+out of it, and how large the state attributes are compared with the recorder's
+limit. The feed URL is reported without its query string or userinfo, and the
+entry texts are not included.
+
 ### Keeping the state attributes small
 
 The entries end up in the `entries` state attribute, and Home Assistant's

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from typing import TYPE_CHECKING, Any
+from urllib.parse import urlparse
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -32,6 +34,7 @@ from .parser import FeedParserConfig
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.device_registry import DeviceInfo
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
     from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
@@ -60,6 +63,38 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
+
+# Only a URL the browser can open belongs on the device page.
+WEB_SCHEMES = frozenset({"http", "https"})
+
+
+def yaml_unique_id(config: FeedParserConfig) -> str:
+    """Return a stable unique_id for a YAML configured feed.
+
+    Without one the entity is not in the entity registry at all, so it cannot
+    be renamed, hidden or put in an area. The feed URL alone is not enough: two
+    YAML sensors may watch the same feed under different names, and a shared
+    unique_id would make Home Assistant drop the second entity. The name is
+    part of the hash for that reason, and the id is derived rather than stored
+    so it comes out the same on every restart.
+    """
+    fingerprint = f"{config.feed_url}\n{config.name}".encode()
+    return f"yaml_{hashlib.sha256(fingerprint).hexdigest()[:16]}"
+
+
+def device_info(config: FeedParserConfig, entry_id: str) -> DeviceInfo:
+    """Return the device a UI configured feed's entity is grouped under."""
+    # Built as a plain dict on purpose: DeviceInfo is a TypedDict, and the
+    # module it lives in has moved between Home Assistant versions.
+    info: DeviceInfo = {
+        "identifiers": {(DOMAIN, entry_id)},
+        "name": config.name,
+        "manufacturer": "RSS",
+        "model": "Feed",
+    }
+    if urlparse(config.feed_url).scheme in WEB_SCHEMES:
+        info["configuration_url"] = config.feed_url
+    return info
 
 
 async def async_setup_platform(
@@ -117,9 +152,16 @@ class FeedParserSensor(CoordinatorEntity[FeedparserCoordinator], SensorEntity):
     ) -> None:
         """Initialize the Feedparser sensor."""
         super().__init__(coordinator)
-        self._attr_name = coordinator.config.name
         if entry_id:
             self._attr_unique_id = f"{entry_id}"
+            self._attr_device_info = device_info(coordinator.config, entry_id)
+            # The entity is the only thing on its device, so it takes the
+            # device's name rather than appending its own to it - which is the
+            # name it has always had.
+            self._attr_name = None
+        else:
+            self._attr_unique_id = yaml_unique_id(coordinator.config)
+            self._attr_name = coordinator.config.name
         _LOGGER.debug("Feed %s: FeedParserSensor initialized - %s", self.name, self)
 
     def __repr__(self: FeedParserSensor) -> str:
