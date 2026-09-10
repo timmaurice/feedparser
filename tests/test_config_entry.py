@@ -29,7 +29,7 @@ from custom_components.feedparser.const import (
 # the constants happen to say.
 OLD_MATERIALISED_TOPN = 9999
 EXPECTED_TOPN = 5
-EXPECTED_VERSION = 3
+EXPECTED_VERSION = 4
 CHOSEN_TOPN = 20
 CHOSEN_OPTION_TOPN = 40
 
@@ -300,3 +300,33 @@ def test_options_prefill_an_old_comma_string_as_chips() -> None:
     schema = asyncio.run(flow.async_step_init())["data_schema"]
     defaults = schema({})
     assert defaults[CONF_INCLUSIONS] == ["title", "published"]
+
+
+def test_migration_lifts_a_stored_show_topn_below_one() -> None:
+    """Test that a number the form would reject today stops emptying a sensor.
+
+    A `-5` stored before the validator existed used to slice the entry list
+    from the end and show almost everything; the parser now clamps it to zero,
+    so the same entry shows nothing at all and the only way out was the options
+    form. Zero is lifted for the same reason.
+    """
+    for stored in (-5, 0):
+        entry = FakeConfigEntry(
+            {"feed_url": "https://example.com", CONF_SHOW_TOPN: stored},
+            options={CONF_SHOW_TOPN: stored},
+            version=3,
+        )
+        migrate(entry)
+        assert entry.data[CONF_SHOW_TOPN] == DEFAULT_TOPN
+        assert entry.options[CONF_SHOW_TOPN] == DEFAULT_TOPN
+
+
+def test_migration_keeps_a_show_topn_the_form_would_accept() -> None:
+    """Test that the floor does not touch a number somebody picked."""
+    entry = FakeConfigEntry(
+        {"feed_url": "https://example.com", CONF_SHOW_TOPN: CHOSEN_TOPN},
+        version=3,
+    )
+    migrate(entry)
+    assert entry.data[CONF_SHOW_TOPN] == CHOSEN_TOPN
+    assert entry.version == EXPECTED_VERSION

@@ -128,7 +128,7 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     #    are migrated to DEFAULT_TOPN.
     # 3: inclusions/exclusions stored as comma separated strings become lists.
     # Both are handled by async_migrate_entry.
-    VERSION = 3
+    VERSION = 4
 
     async def async_step_user(
         self,

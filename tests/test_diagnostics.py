@@ -24,7 +24,7 @@ ENTRY_ID = "01JABCDEF0123456789"
 DATE_FORMAT = "%a, %d %b %Y %H:%M:%S"
 # What the fixture is asked for, spelled out so the assertions read as counts.
 SHOWN_ENTRIES = 3
-ENTRY_VERSION = 3
+ENTRY_VERSION = 4
 
 
 def parser_config(**overrides: Any) -> FeedParserConfig:  # noqa: ANN401

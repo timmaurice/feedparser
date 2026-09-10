@@ -175,8 +175,10 @@ the size and the limit, so the reason for an empty history is visible in the log
 
 Feeds that were added through the UI before the `show_topn` default existed were
 stored with the old value of `9999` — the form's default, not a choice anyone
-made. Those are migrated to `5` on upgrade. A `show_topn` you picked yourself is
-never changed.
+made. Those are migrated to `5` on upgrade. A stored `show_topn` below `1` is
+migrated to `5` as well: the form rejects those now, and a `0` or a negative
+number left the sensor with no entries at all, which could only be undone by
+opening the options. A `show_topn` you picked yourself is never changed.
 
 Due to how `custom_components` are loaded, it is normal to see a `ModuleNotFoundError` error on first boot after adding this, to resolve it, restart Home-Assistant.
 
