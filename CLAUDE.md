@@ -92,10 +92,15 @@ The legacy `run-hass.sh` script still starts a native (non-Docker) instance agai
 
 ## Releasing
 
-Versions are managed by `bump-my-version` (configured in `pyproject.toml`), which keeps `pyproject.toml`, `custom_components/feedparser/manifest.json` and `custom_components/feedparser/sensor.py` in sync.
+Versions are managed by `bumpver` (`[tool.bumpver]` in `pyproject.toml`, and in the `dev` extra),
+which keeps `pyproject.toml`, `custom_components/feedparser/manifest.json` and
+`custom_components/feedparser/sensor.py` in sync. It is not `bump-my-version`, which reads
+`[tool.bumpversion]` and would find no configuration here - naming the wrong tool is how the
+1.2.0 bump ended up applied to the manifest by hand and to nothing else.
+`tests/test_manifest.py::test_the_version_is_the_same_in_all_three_places` fails when they drift.
 
 ```bash
-bump-my-version bump patch   # or minor / major
+bumpver update --patch   # or --minor / --major
 git push --follow-tags
 ```
 
