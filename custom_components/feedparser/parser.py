@@ -102,8 +102,11 @@ def parse_feed(content: bytes | str, config: FeedParserConfig) -> ParsedFeed:
         return ParsedFeed(channel=channel, native_value=0)
 
     _LOGGER.debug("Feed %s: Feed data fetched successfully", config.name)
-    # the sensor value is the number of entries, capped at show_topn
-    native_value = min(len(parsed_feed.entries), config.show_topn)
+    # The sensor value is the number of entries, capped at show_topn. A negative
+    # cap would slice from the end of the list (`entries[:-5]` keeps all but the
+    # last five) and put a negative number in the state, so treat anything below
+    # zero as zero.
+    native_value = min(len(parsed_feed.entries), max(config.show_topn, 0))
     _LOGGER.debug(
         "Feed %s: %s entries is going to be added to the sensor",
         config.name,
@@ -120,6 +123,21 @@ def parse_feed(content: bytes | str, config: FeedParserConfig) -> ParsedFeed:
     )
     _warn_if_oversized(channel, entries, config)
     return ParsedFeed(channel=channel, entries=entries, native_value=native_value)
+
+
+def is_parsable_feed(content: bytes | str) -> bool:
+    """Return whether `content` actually is an RSS/Atom feed.
+
+    A reachable URL is not a feed URL. Pointed at an ordinary web page,
+    feedparser returns a result with an empty `version` and no entries instead
+    of raising, which used to give a config entry whose sensor sits at 0 and
+    logs "No entries found" on every poll. The `version` is what feedparser
+    derives from the root element (`rss20`, `atom10`, ...), so it is the field
+    that tells a feed from a page; entries are accepted as well for the rare
+    feed whose flavour it cannot name.
+    """
+    parsed: FeedParserDict = feedparser.parse(content)
+    return bool(parsed.get("version") or parsed.get("entries"))
 
 
 def _cut_index(value: str, limit: int) -> int:

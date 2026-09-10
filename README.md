@@ -34,6 +34,11 @@ Alternatively, click on the button below to add the repository:
 3. Enter the name and URL of your RSS feed.
 4. Once added, you can click **Configure** on the integration entry to adjust settings like the update interval, date format, inclusions, and exclusions.
 
+The URL is fetched while you add the feed and the response has to parse as
+RSS or Atom. A reachable address that is an ordinary web page is rejected with
+"does not serve an RSS or Atom feed" instead of becoming an entry whose sensor
+sits at 0 forever.
+
 The **Update interval** is set in minutes and applies per feed, so a feed that changes every few minutes and one that changes every few hours can be polled at different rates. It defaults to 60 minutes. Feeds added before this option existed keep polling at the 60 minute default until you change it.
 
 ### Via configuration.yaml (Legacy)

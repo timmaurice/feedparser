@@ -33,10 +33,13 @@ from .const import (
     DOMAIN,
     MAX_SCAN_INTERVAL_MINUTES,
     MIN_SCAN_INTERVAL_MINUTES,
+    MIN_TOPN,
     NO_TEXT_LIMIT,
 )
+from .parser import is_parsable_feed
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
     from homeassistant.data_entry_flow import FlowResult
 
 _LOGGER = logging.getLogger(__name__)
@@ -56,12 +59,18 @@ SCAN_INTERVAL_SELECTOR = NumberSelector(
 # truncation off. The YAML schema uses cv.positive_int for the same reason.
 MAX_TEXT_LENGTH_VALIDATOR = vol.All(vol.Coerce(int), vol.Range(min=NO_TEXT_LIMIT))
 
+# `parse_feed` slices the entries with this, so a negative number would slice
+# from the end of the list and leave a negative number in the sensor's state,
+# and zero would produce a sensor with no entries at all. The YAML schema uses
+# cv.positive_int; one entry is the smallest request that means anything.
+SHOW_TOPN_VALIDATOR = vol.All(vol.Coerce(int), vol.Range(min=MIN_TOPN))
+
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NAME): str,
         vol.Required(CONF_FEED_URL): str,
         vol.Optional(CONF_DATE_FORMAT, default=DEFAULT_DATE_FORMAT): str,
-        vol.Optional(CONF_SHOW_TOPN, default=DEFAULT_TOPN): int,
+        vol.Optional(CONF_SHOW_TOPN, default=DEFAULT_TOPN): SHOW_TOPN_VALIDATOR,
         vol.Optional(
             CONF_SCAN_INTERVAL,
             default=DEFAULT_SCAN_INTERVAL_MINUTES,
@@ -70,6 +79,29 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Optional(CONF_REMOVE_SUMMARY_IMG, default=False): bool,
     },
 )
+
+
+async def async_validate_feed(hass: HomeAssistant, url: str) -> str | None:
+    """Return the error key for `url`, or None when it serves a feed.
+
+    Reachability alone was accepted before, which let any web page become a
+    config entry.
+    """
+    try:
+        content = await FeedparserAPI(hass).async_fetch(url)
+    except (FeedparserApiError, aiohttp.InvalidURL, ValueError):
+        return "cannot_connect"
+    except Exception:
+        # Whatever it was, it must not reach the user as an unhandled flow
+        # traceback.
+        _LOGGER.exception("Unexpected error fetching feed from %s", url)
+        return "unknown"
+
+    # feedparser is CPU bound and a feed can be large, so keep it off the loop.
+    if not await hass.async_add_executor_job(is_parsable_feed, content):
+        _LOGGER.debug("%s was reachable but is not a feed", url)
+        return "invalid_feed"
+    return None
 
 
 class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -86,11 +118,9 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the initial step."""
         errors: dict[str, str] = {}
         if user_input is not None:
-            try:
-                # Basic validation: check that the feed is reachable
-                await FeedparserAPI(self.hass).async_fetch(user_input[CONF_FEED_URL])
-            except (FeedparserApiError, aiohttp.InvalidURL, ValueError):
-                errors["base"] = "cannot_connect"
+            error = await async_validate_feed(self.hass, user_input[CONF_FEED_URL])
+            if error:
+                errors["base"] = error
             else:
                 await self.async_set_unique_id(user_input[CONF_FEED_URL])
                 self._abort_if_unique_id_configured()
@@ -153,7 +183,7 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Optional(
                         CONF_SHOW_TOPN,
                         default=int(get_val(CONF_SHOW_TOPN, DEFAULT_TOPN)),
-                    ): int,
+                    ): SHOW_TOPN_VALIDATOR,
                     vol.Optional(
                         CONF_MAX_TEXT_LENGTH,
                         default=int(

@@ -148,6 +148,23 @@ def test_show_topn_still_overrides_the_default() -> None:
     assert parsed.native_value == EXPECTED_OVERRIDE_ENTRIES
 
 
+@pytest.mark.parametrize("show_topn", [0, -5])
+def test_a_show_topn_below_one_yields_no_entries(show_topn: int) -> None:
+    """Test that a non-positive cap cannot produce a negative state.
+
+    A YAML sensor may set 0, and an entry written before the UI validated the
+    field can still carry a negative number. `entries[:-5]` keeps all but the
+    last five, so -5 used to give a sensor whose state was -5 while it carried
+    254 entries.
+    """
+    parsed = parse_feed(
+        ZEIT_VERBRECHEN.read_bytes(),
+        zeit_verbrechen_config(show_topn=show_topn),
+    )
+    assert parsed.native_value == 0
+    assert parsed.entries == []
+
+
 def _text_values(value: object) -> list[str]:
     """Return every string in a parsed entry that is not a URL or an id."""
     if isinstance(value, str):

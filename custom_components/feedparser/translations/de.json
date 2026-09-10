@@ -19,6 +19,7 @@
     },
     "error": {
       "cannot_connect": "Verbindung fehlgeschlagen",
+      "invalid_feed": "Diese URL ist erreichbar, liefert aber keinen RSS- oder Atom-Feed.",
       "invalid_auth": "Ungültige Authentifizierung",
       "unknown": "Unerwarteter Fehler"
     },

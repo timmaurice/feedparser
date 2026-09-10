@@ -33,6 +33,10 @@ DEFAULT_TOPN = 5
 # materialised its own default into the entry - so the migration replaces it.
 UNLIMITED_TOPN = 9999
 
+# Fewer than one entry is not a feed anybody wants to look at, and a negative
+# number used to slice the entry list from the end.
+MIN_TOPN = 1
+
 # Feed entries carry whole articles in `summary`/`content`. Cut the text at this
 # many characters so a default sized feed stays well below the recorder limit.
 # Set max_text_length to NO_TEXT_LIMIT to keep the full text.
