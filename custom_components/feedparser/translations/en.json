@@ -15,16 +15,28 @@
         "data_description": {
           "scan_interval": "How often the feed is fetched. Default is 60 minutes."
         }
+      },
+      "reconfigure": {
+        "title": "Change the feed URL",
+        "data": {
+          "feed_url": "Feed URL"
+        },
+        "data_description": {
+          "feed_url": "The new address of the same feed. The sensor keeps its entity ID and its history, so cards and automations that use it keep working."
+        }
       }
     },
     "error": {
       "cannot_connect": "Failed to connect",
       "invalid_feed": "This URL is reachable, but it does not serve an RSS or Atom feed.",
+      "already_configured": "Another feed is already configured for this URL.",
       "invalid_auth": "Invalid authentication",
       "unknown": "Unexpected error"
     },
     "abort": {
-      "already_configured": "This feed is already configured."
+      "already_configured": "This feed is already configured.",
+      "reconfigure_successful": "The feed URL was changed.",
+      "unknown_entry": "This feed is no longer configured."
     }
   },
   "options": {

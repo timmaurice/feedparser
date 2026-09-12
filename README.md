@@ -41,6 +41,28 @@ sits at 0 forever.
 
 The **Update interval** is set in minutes and applies per feed, so a feed that changes every few minutes and one that changes every few hours can be polled at different rates. It defaults to 60 minutes. Feeds added before this option existed keep polling at the 60 minute default until you change it.
 
+### Moving a feed to a new URL
+
+Use **Reconfigure** on the integration entry (the three dot menu next to the
+feed) to point it at a different URL. The new address is fetched and has to
+parse as a feed, the same way it does when you add one, and a URL another feed
+entry already watches is refused.
+
+Everything else stays: the sensor keeps its entity id, its history, its name
+and its area, so the cards, templates and automations that name it keep
+working. Before this, the only way to change the URL was to delete the feed and
+add it again, which mints a new entity id and leaves the old one behind.
+
+This is for a feed that has moved — a new domain, a reverse proxy in front of a
+self hosted one, a changed subscription token. Pointing an entry at an entirely
+different publication works, but the recorder history the sensor carries is
+then the history of the old feed.
+
+YAML feeds are reconfigured by editing `configuration.yaml`. Note that changing
+`feed_url` there is a new entity id, because a YAML sensor's identity is
+derived from its URL and name — see
+[Entities, devices and diagnostics](#entities-devices-and-diagnostics).
+
 ### Via configuration.yaml (Legacy)
 
 ```yaml
@@ -164,6 +186,22 @@ effect, whether the last poll succeeded, how many entries and which keys came
 out of it, and how large the state attributes are compared with the recorder's
 limit. The feed URL is reported without its query string or userinfo, and the
 entry texts are not included.
+
+### Which feed a sensor polls
+
+Each sensor carries the URL it polls in a `feed_url` attribute, so it can be
+read from a template, from **Developer tools > States** or from a card without
+opening the feed's configuration:
+
+```jinja
+{{ state_attr('sensor.my_feed', 'feed_url') }}
+```
+
+A private feed carries its subscription token in that URL, and state attributes
+are recorded and readable by anyone who can see the entity — which is the same
+audience that can already open the entry's configuration page. Diagnostics is
+the exception and still redacts it, because a diagnostics download is meant to
+be pasted into an issue.
 
 ### Keeping the state attributes small
 

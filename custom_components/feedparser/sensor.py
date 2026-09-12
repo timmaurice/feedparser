@@ -29,7 +29,7 @@ from .const import (
     UNLIMITED_TOPN,
 )
 from .coordinator import FeedparserCoordinator
-from .parser import FeedParserConfig
+from .parser import FeedParserConfig, state_attributes
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -215,6 +215,11 @@ class FeedParserSensor(CoordinatorEntity[FeedparserCoordinator], SensorEntity):
         return self.coordinator.config.local_time
 
     @property
+    def feed_url(self: FeedParserSensor) -> str:
+        """Return the URL the feed is polled from."""
+        return self.coordinator.config.feed_url
+
+    @property
     def extra_state_attributes(self: FeedParserSensor) -> dict[str, Any]:
         """Return entity specific state attributes."""
-        return {"channel": self.channel, "entries": self.feed_entries}
+        return state_attributes(self.feed_url, self.channel, self.feed_entries)

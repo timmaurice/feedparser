@@ -158,6 +158,80 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_reconfigure(
+        self: FeedparserConfigFlow,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Point an existing entry at a different feed URL.
+
+        The URL lives in the entry's `data`, which an options flow cannot
+        write, so moving a feed used to mean deleting the entry and adding it
+        again - which mints a new entity id and leaves the history, the cards
+        and the automations that named the old one behind. A domain change or
+        a reverse proxy in front of a self hosted feed is exactly the case
+        where nothing about the feed has changed except where it is served.
+
+        The entry is resolved and written through `hass.config_entries` rather
+        than through `_get_reconfigure_entry` and `async_update_reload_and_abort`,
+        which do the same two things: those helpers arrived in core 2024.11 and
+        the newest stubs that install on the Python the hooks run under stop at
+        2024.3, so the suite could only pin stand-ins for them. Both calls used
+        here exist either side of that line.
+        """
+        entry = self.hass.config_entries.async_get_entry(
+            self.context.get("entry_id", ""),
+        )
+        if entry is None:
+            return self.async_abort(reason="unknown_entry")
+
+        errors: dict[str, str] = {}
+        current_url: str = entry.data[CONF_FEED_URL]
+        if user_input is not None:
+            url = user_input[CONF_FEED_URL]
+            error = await async_validate_feed(self.hass, url)
+            if error:
+                errors["base"] = error
+            elif self._another_entry_watches(entry, url):
+                errors["base"] = "already_configured"
+            else:
+                # The unique id is the feed URL. Leaving it behind would let
+                # the entry go on claiming a URL it no longer polls, so adding
+                # the old feed again would abort as a duplicate while adding
+                # the new one a second time would be allowed.
+                self.hass.config_entries.async_update_entry(
+                    entry,
+                    data={**entry.data, CONF_FEED_URL: url},
+                    unique_id=url,
+                )
+                # `update_listener` reloads the entry, the same way a changed
+                # option does, so the coordinator picks the new URL up at once.
+                return self.async_abort(reason="reconfigure_successful")
+            current_url = url
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=vol.Schema(
+                {vol.Required(CONF_FEED_URL, default=current_url): str},
+            ),
+            errors=errors,
+        )
+
+    def _another_entry_watches(
+        self: FeedparserConfigFlow,
+        entry: config_entries.ConfigEntry,
+        url: str,
+    ) -> bool:
+        """Return whether a feed is already configured by a different entry.
+
+        Both the unique id and the stored URL are checked: an entry created
+        before the unique id was set carries only the latter.
+        """
+        return any(
+            other.entry_id != entry.entry_id
+            and url in (other.unique_id, other.data.get(CONF_FEED_URL))
+            for other in self._async_current_entries()
+        )
+
     @staticmethod
     @callback
     def async_get_options_flow(

@@ -12,7 +12,11 @@ from custom_components.feedparser.diagnostics import (
     async_get_config_entry_diagnostics,
     redact_url,
 )
-from custom_components.feedparser.parser import FeedParserConfig, parse_feed
+from custom_components.feedparser.parser import (
+    FeedParserConfig,
+    attributes_size,
+    parse_feed,
+)
 from custom_components.feedparser.sensor import (
     FeedParserSensor,
     device_info,
@@ -221,3 +225,34 @@ def test_a_renamed_yaml_feed_is_a_new_entity() -> None:
     assert yaml_unique_id(parser_config(name="two")) != original
     assert yaml_unique_id(parser_config(feed_url="https://ex.com/f.xml")) != original
     assert yaml_unique_id(parser_config(name="one")) == original
+
+
+def test_the_reported_size_is_the_size_of_what_is_written() -> None:
+    """Test that diagnostics measures the attributes the sensor actually has.
+
+    The dict was spelled out in three places - here, in the sensor, and in the
+    recorder warning - so adding a key to one of them quietly turned the
+    reported size into the size of something else. They share one builder now,
+    and this is what holds them together.
+    """
+    coordinator = FakeCoordinator(parser_config())
+    sensor = FeedParserSensor(coordinator)  # type: ignore[arg-type]
+    written = attributes_size(sensor.extra_state_attributes)
+    assert diagnostics()["feed"]["state_attributes_bytes"] == written
+
+
+def test_diagnostics_still_redact_a_url_the_sensor_shows_in_full() -> None:
+    """Test that exposing the URL on the entity did not reach the report.
+
+    The entity's audience is whoever can open the config entry anyway; a
+    diagnostics download is meant to be pasted into a GitHub issue, so a
+    private feed's token has to stay out of it.
+    """
+    secret = "https://user:pw@example.com/feeds/Ab3xY9zQ1mN7pL2k/rss?token=abc"
+    coordinator = FakeCoordinator(parser_config(feed_url=secret))
+    sensor = FeedParserSensor(coordinator)  # type: ignore[arg-type]
+    assert sensor.extra_state_attributes["feed_url"] == secret
+
+    report = diagnostics(url=secret)
+    assert "abc" not in report["entry"]["data"]["feed_url"]
+    assert "Ab3xY9zQ1mN7pL2k" not in report["parser_config"]["feed_url"]

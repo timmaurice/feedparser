@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import dataclasses
-import json
 import re
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
 from .const import DOMAIN, MAX_STATE_ATTRS_BYTES
+from .parser import attributes_size, state_attributes
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -63,11 +63,13 @@ def attribute_size(coordinator: FeedparserCoordinator) -> int | None:
     """Return the size of the state attributes the sensor would write."""
     if coordinator.data is None:
         return None
-    attributes = {
-        "channel": coordinator.data.channel,
-        "entries": coordinator.data.entries,
-    }
-    return len(json.dumps(attributes, default=str).encode())
+    return attributes_size(
+        state_attributes(
+            coordinator.config.feed_url,
+            coordinator.data.channel,
+            coordinator.data.entries,
+        ),
+    )
 
 
 async def async_get_config_entry_diagnostics(

@@ -26,6 +26,8 @@ FEED_URL = "https://example.com/feed.xml"
 A_REAL_FEED = DATA_PATH / "ntv.xml"
 # What a plain web page looks like: reachable, parses, is not a feed.
 AN_HTML_PAGE = b"<html><head><title>Example</title></head><body>hi</body></html>"
+# Spelled out: what a reconfigured entry has to still be carrying afterwards.
+EXPECTED_KEPT_TOPN = 5
 
 
 class FakeHass:
@@ -146,3 +148,247 @@ def test_show_topn_of_one_is_accepted(
     """Test that the smallest number that means something goes through."""
     validated = schema_source()(payload(schema_source, MIN_TOPN))
     assert validated[CONF_SHOW_TOPN] == MIN_TOPN
+
+
+NEW_FEED_URL = "https://example.com/moved/feed.xml"
+OTHER_FEED_URL = "https://elsewhere.example/feed.xml"
+
+
+class FakeEntry:
+    """The few attributes of a config entry the reconfigure step touches."""
+
+    def __init__(
+        self: FakeEntry,
+        entry_id: str,
+        data: dict[str, Any],
+        unique_id: str | None = None,
+    ) -> None:
+        """Initialize."""
+        self.entry_id = entry_id
+        self.data = data
+        self.unique_id = unique_id if unique_id is not None else data.get("feed_url")
+        self.options: dict[str, Any] = {}
+        self.source = "user"
+        self.disabled_by = None
+
+
+class FakeEntries:
+    """Records what the reconfigure step writes back.
+
+    Strict about the keywords it accepts for the same reason the migration's
+    double is: a fake that swallows `**kwargs` would let the flow pass a
+    keyword no Home Assistant takes and no test would notice.
+    """
+
+    ACCEPTED = frozenset({"data", "options", "version", "title", "unique_id"})
+
+    def __init__(self: FakeEntries, entries: list[FakeEntry]) -> None:
+        """Initialize."""
+        self.entries = entries
+        self.updates: list[dict[str, Any]] = []
+
+    def async_get_entry(self: FakeEntries, entry_id: str) -> FakeEntry | None:
+        """Resolve an entry the way the flow's context asks for it."""
+        return next((e for e in self.entries if e.entry_id == entry_id), None)
+
+    def async_entries(
+        self: FakeEntries,
+        domain: str | None = None,  # noqa: ARG002
+        include_ignore: bool = True,  # noqa: ARG002, FBT002
+    ) -> list[FakeEntry]:
+        """Return every entry of the integration.
+
+        Both positional arguments are spelled out because the core passes them
+        that way - a fake taking only the domain fails where the real call
+        would not.
+        """
+        return list(self.entries)
+
+    def async_update_entry(
+        self: FakeEntries,
+        entry: FakeEntry,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> bool:
+        """Apply an update the way Home Assistant would."""
+        if unexpected := set(kwargs) - self.ACCEPTED:
+            msg = (
+                "async_update_entry() got an unexpected keyword argument "
+                f"{sorted(unexpected)[0]!r}"
+            )
+            raise TypeError(msg)
+        self.updates.append(kwargs)
+        entry.data = kwargs.get("data", entry.data)
+        entry.unique_id = kwargs.get("unique_id", entry.unique_id)
+        return True
+
+
+class HassWithEntries(FakeHass):
+    """The fake hass the reconfigure step needs: executor plus config entries."""
+
+    def __init__(self: HassWithEntries, entries: list[FakeEntry]) -> None:
+        """Initialize."""
+        self.config_entries = FakeEntries(entries)
+
+
+def reconfigure_flow(
+    monkeypatch: pytest.MonkeyPatch,
+    result: bytes | Exception,
+    entries: list[FakeEntry],
+    entry_id: str = "entry-1",
+) -> tuple[config_flow.FeedparserConfigFlow, FakeEntries]:
+    """Return a reconfigure flow wired to fake entries and a fixed fetch.
+
+    Home Assistant starts this flow with the entry id in the flow context, and
+    the base class carries a read-only empty mapping until it does, so the
+    double has to be set directly. That is a property of running the flow
+    without a flow manager, not of how the step is used.
+    """
+    monkeypatch.setattr(config_flow, "FeedparserAPI", fetching(result))
+    flow = config_flow.FeedparserConfigFlow()
+    flow.hass = HassWithEntries(entries)  # type: ignore[assignment]
+    flow.context = {"source": "reconfigure", "entry_id": entry_id}
+    return flow, flow.hass.config_entries  # type: ignore[attr-defined]
+
+
+def an_entry(url: str = FEED_URL, entry_id: str = "entry-1") -> FakeEntry:
+    """Return a config entry watching `url`."""
+    return FakeEntry(entry_id, {"name": "Some Feed", "feed_url": url, "show_topn": 5})
+
+
+def test_reconfigure_prefills_the_url_the_entry_has(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that the form opens on the URL the feed is polled from today."""
+    flow, _ = reconfigure_flow(monkeypatch, A_REAL_FEED.read_bytes(), [an_entry()])
+    result = asyncio.run(flow.async_step_reconfigure())
+    assert result["step_id"] == "reconfigure"
+    assert result["data_schema"]({})["feed_url"] == FEED_URL
+
+
+def test_reconfigure_moves_the_feed_and_its_unique_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that a new URL is stored and the entry stops claiming the old one.
+
+    The unique id is the feed URL. Leaving it behind would let the entry go on
+    claiming a URL it no longer polls, so adding the old feed again would abort
+    as a duplicate while the new one could be added a second time.
+    """
+    entry = an_entry()
+    flow, entries = reconfigure_flow(monkeypatch, A_REAL_FEED.read_bytes(), [entry])
+    result = asyncio.run(flow.async_step_reconfigure({"feed_url": NEW_FEED_URL}))
+
+    assert result["type"] == "abort"
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data["feed_url"] == NEW_FEED_URL
+    assert entry.unique_id == NEW_FEED_URL
+    assert len(entries.updates) == 1
+    assert entries.updates[0]["unique_id"] == NEW_FEED_URL
+
+
+def test_reconfigure_keeps_every_other_setting(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that only the URL is rewritten.
+
+    The step writes a whole `data` dict, so building it from anything but the
+    stored one would drop the name and the settings that live beside the URL.
+    """
+    entry = an_entry()
+    flow, _ = reconfigure_flow(monkeypatch, A_REAL_FEED.read_bytes(), [entry])
+    asyncio.run(flow.async_step_reconfigure({"feed_url": NEW_FEED_URL}))
+    assert entry.data["name"] == "Some Feed"
+    assert entry.data["show_topn"] == EXPECTED_KEPT_TOPN
+
+
+def test_reconfigure_rejects_a_url_that_is_not_a_feed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that the new URL goes through the same check as a new entry.
+
+    Without it the reconfigure step would be a way around the validation the
+    add form does - and the feed would come back as a sensor stuck at 0.
+    """
+    entry = an_entry()
+    flow, entries = reconfigure_flow(monkeypatch, AN_HTML_PAGE, [entry])
+    result = asyncio.run(flow.async_step_reconfigure({"feed_url": NEW_FEED_URL}))
+
+    assert result["step_id"] == "reconfigure"
+    assert result["errors"] == {"base": "invalid_feed"}
+    assert entry.data["feed_url"] == FEED_URL
+    assert entries.updates == []
+    # the rejected URL stays in the field, so it can be corrected
+    assert result["data_schema"]({})["feed_url"] == NEW_FEED_URL
+
+
+def test_reconfigure_rejects_an_unreachable_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that a fetch failure keeps the entry pointed where it was."""
+    entry = an_entry()
+    flow, entries = reconfigure_flow(
+        monkeypatch,
+        FeedparserApiError("boom"),
+        [entry],
+    )
+    result = asyncio.run(flow.async_step_reconfigure({"feed_url": NEW_FEED_URL}))
+
+    assert result["errors"] == {"base": "cannot_connect"}
+    assert entry.data["feed_url"] == FEED_URL
+    assert entries.updates == []
+
+
+def test_reconfigure_refuses_a_url_another_entry_watches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that two entries cannot end up on the same feed.
+
+    A duplicate unique id is not something Home Assistant recovers from on its
+    own: the second entry's entity is dropped at setup. The add form aborts on
+    it, so this step has to as well - as a form error rather than an abort,
+    because the user is mid-edit and can simply correct the URL.
+    """
+    entry = an_entry()
+    other = FakeEntry("entry-2", {"name": "Other", "feed_url": OTHER_FEED_URL})
+    flow, entries = reconfigure_flow(
+        monkeypatch,
+        A_REAL_FEED.read_bytes(),
+        [entry, other],
+    )
+    result = asyncio.run(flow.async_step_reconfigure({"feed_url": OTHER_FEED_URL}))
+
+    assert result["errors"] == {"base": "already_configured"}
+    assert entry.data["feed_url"] == FEED_URL
+    assert entries.updates == []
+
+
+def test_reconfigure_accepts_the_entrys_own_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that submitting the URL unchanged is not read as a duplicate.
+
+    `_abort_if_unique_id_configured` would have: it counts the entry being
+    reconfigured. Somebody who opens the form and confirms must not be told
+    their own feed is already configured.
+    """
+    entry = an_entry()
+    flow, entries = reconfigure_flow(monkeypatch, A_REAL_FEED.read_bytes(), [entry])
+    result = asyncio.run(flow.async_step_reconfigure({"feed_url": FEED_URL}))
+
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data["feed_url"] == FEED_URL
+    assert entries.updates[0]["unique_id"] == FEED_URL
+
+
+def test_reconfigure_of_a_deleted_entry_aborts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that a flow whose entry is gone ends instead of raising.
+
+    An entry can be removed while its reconfigure form is open, and reading
+    `entry.data` off None would reach the user as an unhandled flow traceback.
+    """
+    flow, _ = reconfigure_flow(monkeypatch, A_REAL_FEED.read_bytes(), [])
+    result = asyncio.run(flow.async_step_reconfigure())
+    assert result["type"] == "abort"
+    assert result["reason"] == "unknown_entry"

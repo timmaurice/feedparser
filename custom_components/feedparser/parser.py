@@ -273,6 +273,35 @@ def _truncate_entry(entry: dict[str, Any], config: FeedParserConfig) -> dict[str
     }
 
 
+def state_attributes(
+    feed_url: str,
+    channel: dict[str, Any],
+    entries: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Return the attributes a feed's sensor exposes.
+
+    One builder for all three readers of it - the sensor that writes them, the
+    warning below that measures them against the recorder limit, and the
+    diagnostics report that repeats that measurement. Three separate literals
+    are how a reported size stops being the size of what is written.
+
+    `feed_url` is in there because the URL was write-once: it is stored on the
+    config entry, the options form cannot show it, and a YAML sensor never
+    showed it at all, so a feed that had run for a year could not be told apart
+    from another without opening its configuration. A private feed carries its
+    token in that URL and the attributes are recorded, but the audience is the
+    one that can already open the entry's configuration page. Diagnostics still
+    redacts it, because a diagnostics download is meant to be pasted into an
+    issue.
+    """
+    return {"feed_url": feed_url, "channel": channel, "entries": entries}
+
+
+def attributes_size(attributes: dict[str, Any]) -> int:
+    """Return the number of bytes the recorder would have to store."""
+    return len(json.dumps(attributes, default=str).encode())
+
+
 def _warn_if_oversized(
     channel: dict[str, Any],
     entries: list[dict[str, Any]],
@@ -290,8 +319,7 @@ def _warn_if_oversized(
     configuration instead, and again once the settings it names have changed
     or the attributes fit and grow past the limit anew.
     """
-    attributes = {"channel": channel, "entries": entries}
-    size = len(json.dumps(attributes, default=str).encode())
+    size = attributes_size(state_attributes(config.feed_url, channel, entries))
     feed_key = config.feed_url or config.name
     settings = (config.show_topn, config.max_text_length)
     if size > MAX_STATE_ATTRS_BYTES:

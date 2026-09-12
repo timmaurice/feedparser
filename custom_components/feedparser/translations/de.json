@@ -15,16 +15,28 @@
         "data_description": {
           "scan_interval": "Wie oft der Feed abgerufen wird. Standard sind 60 Minuten."
         }
+      },
+      "reconfigure": {
+        "title": "Feed-URL ändern",
+        "data": {
+          "feed_url": "Feed-URL"
+        },
+        "data_description": {
+          "feed_url": "Die neue Adresse desselben Feeds. Der Sensor behält seine Entitäts-ID und seinen Verlauf, Karten und Automatisierungen funktionieren also weiter."
+        }
       }
     },
     "error": {
       "cannot_connect": "Verbindung fehlgeschlagen",
       "invalid_feed": "Diese URL ist erreichbar, liefert aber keinen RSS- oder Atom-Feed.",
+      "already_configured": "Für diese URL ist bereits ein anderer Feed eingerichtet.",
       "invalid_auth": "Ungültige Authentifizierung",
       "unknown": "Unerwarteter Fehler"
     },
     "abort": {
-      "already_configured": "Dieser Feed ist bereits eingerichtet."
+      "already_configured": "Dieser Feed ist bereits eingerichtet.",
+      "reconfigure_successful": "Die Feed-URL wurde geändert.",
+      "unknown_entry": "Dieser Feed ist nicht mehr eingerichtet."
     }
   },
   "options": {

@@ -1,6 +1,6 @@
 # Project Overview
 
-This project is a custom integration for Home Assistant that parses RSS/Atom feeds into sensors. Each configured feed becomes one sensor whose state is the number of entries and whose `entries` attribute holds the parsed items (title, link, image, audio, published date, …). A `channel` attribute carries the feed-level metadata.
+This project is a custom integration for Home Assistant that parses RSS/Atom feeds into sensors. Each configured feed becomes one sensor whose state is the number of entries and whose `entries` attribute holds the parsed items (title, link, image, audio, published date, …). A `channel` attribute carries the feed-level metadata and `feed_url` the URL it is polled from.
 
 The integration supports both UI configuration (config flow, recommended) and legacy YAML platform configuration. Relative image and link URLs are resolved against the feed URL, and dates are normalised to UTC or local time with a configurable `strftime` format.
 
@@ -18,10 +18,10 @@ The integration supports both UI configuration (config flow, recommended) and le
 | Module | Responsibility |
 | --- | --- |
 | `api.py` | Fetching only. `FeedparserAPI.async_fetch()` returns raw bytes, over HTTP(S) via `async_get_clientsession` or from a `file://` URL in the executor. Raises `FeedparserApiError`. |
-| `parser.py` | Pure parsing. `parse_feed(content, FeedParserConfig) -> ParsedFeed`. No network, no config entries — this is what the test suite exercises directly. |
+| `parser.py` | Pure parsing. `parse_feed(content, FeedParserConfig) -> ParsedFeed`. No network, no config entries — this is what the test suite exercises directly. Also owns `state_attributes()`, the single builder for what the sensor exposes: the entity writes it, the recorder warning measures it and `diagnostics.attribute_size` reports it, so a new attribute cannot make a reported size the size of something else. |
 | `coordinator.py` | `FeedparserCoordinator` (a `DataUpdateCoordinator`) ties the two together and owns the polling interval. `build_coordinator(hass, entry)` maps a config entry onto it. |
 | `sensor.py` | `FeedParserSensor`, a `CoordinatorEntity`. Holds no fetch or parse logic. Also carries the legacy YAML `PLATFORM_SCHEMA`. |
-| `config_flow.py` | UI setup and options. Validates that the URL is reachable through `api.py` and that the response parses as a feed. |
+| `config_flow.py` | UI setup, reconfigure and options. Validates that the URL is reachable through `api.py` and that the response parses as a feed. `async_step_reconfigure` is what moves a feed to a new URL: it rewrites `data[feed_url]` **and** the entry's `unique_id`, which is that URL. |
 | `sanitize.py` | The HTML and URL allow-list every exposed value goes through. See below. |
 | `diagnostics.py` | `async_get_config_entry_diagnostics` — settings, last poll result and attribute size for a config entry. Reports keys, never entry text; redacts the feed URL's query string and userinfo. |
 
@@ -48,7 +48,7 @@ Configuration is handled through the Home Assistant UI:
 1.  Navigate to **Settings > Devices & Services**.
 2.  Click **Add Integration** and search for "A better Feedparser".
 3.  Enter the name and URL of the feed.
-4.  Use **Configure** on the entry to adjust the update interval, date format, inclusions and exclusions.
+4.  Use **Configure** on the entry to adjust the update interval, date format, inclusions and exclusions, or **Reconfigure** to point it at a different feed URL.
 
 The update interval is set per feed in minutes (default 60, minimum 1). Changing an option reloads the config entry so the new interval takes effect immediately.
 
