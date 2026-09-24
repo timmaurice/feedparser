@@ -1,8 +1,13 @@
 name: CI/CQ
 
 on:
+  # push is limited to master: a push to a PR branch already fires
+  # pull_request, and an unrestricted push would run the suite twice.
+  push:
+    branches: ["master"]
   pull_request:
     types: ["opened", "synchronize", "reopened"]
+  workflow_dispatch:
 
 env:
   # The oldest core this job is willing to call a valid run. It is not the
