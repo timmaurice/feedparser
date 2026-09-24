@@ -35,7 +35,7 @@ repos:
       - id: validate-pyproject
         additional_dependencies: ["validate-pyproject-schema-store[all]"]
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.4.1"
+    rev: "v2.3.1"
     hooks:
       - id: mypy
         additional_dependencies:

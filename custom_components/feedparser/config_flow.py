@@ -44,8 +44,8 @@ from .const import (
 from .parser import is_parsable_feed
 
 if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigFlowResult
     from homeassistant.core import HomeAssistant
-    from homeassistant.data_entry_flow import FlowResult
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -133,7 +133,7 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self: FeedparserConfigFlow,
         user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle the initial step."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -161,7 +161,7 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_reconfigure(
         self: FeedparserConfigFlow,
         user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Point an existing entry at a different feed URL.
 
         The URL lives in the entry's `data`, which an options flow cannot
@@ -247,7 +247,7 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_init(
         self: FeedparserOptionsFlowHandler,
         user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
             # The number selector hands back a float, store whole minutes.

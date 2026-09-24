@@ -22,7 +22,7 @@ from custom_components.feedparser.parser import is_parsable_feed
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from homeassistant.data_entry_flow import FlowResult
+    from homeassistant.config_entries import ConfigFlowResult
 
 FEED_URL = "https://example.com/feed.xml"
 A_REAL_FEED = DATA_PATH / "ntv.xml"
@@ -253,7 +253,7 @@ def reconfigure_flow(
     return flow, hass.config_entries
 
 
-def prefilled_url(result: FlowResult) -> str:
+def prefilled_url(result: ConfigFlowResult) -> str:
     """Return the URL the form's field opens on."""
     data_schema = result["data_schema"]
     assert data_schema is not None, "the step showed no form"
