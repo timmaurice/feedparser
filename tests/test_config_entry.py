@@ -248,19 +248,32 @@ def test_migration_from_version_one_applies_every_step() -> None:
     assert entry.version == EXPECTED_VERSION
 
 
-def options_flow_for(entry: FakeConfigEntry) -> FeedparserOptionsFlowHandler:
-    """Return an options flow handler wired to a fake config entry.
+class OptionsFlowOnFakeEntry(FeedparserOptionsFlowHandler):
+    """The options flow handler, answering `config_entry` from a fake entry.
 
     The handler reads `self.config_entry` off the Home Assistant base class.
-    From core 2024.11 on that is a read-only property resolving the entry from
-    `hass` via the flow's handler id, so a real core needs no wiring here at
-    all - and would refuse this assignment. The core the suite is pinned to has
-    no such attribute, so the double has to be set directly. Assigning it is a
-    property of the test environment, not of how the flow is used.
+    From core 2024.11 on that is a read-only property, so assigning a double to
+    it raises AttributeError; older cores have no such attribute at all. A
+    subclass that answers the property itself works against both, and leaves
+    the handler under test untouched.
     """
-    flow = FeedparserOptionsFlowHandler()
-    flow.config_entry = entry  # type: ignore[assignment,attr-defined]
-    return flow
+
+    def __init__(self: OptionsFlowOnFakeEntry, entry: FakeConfigEntry) -> None:
+        """Initialize."""
+        super().__init__()
+        self._fake_entry = entry
+
+    @property
+    def config_entry(  # type: ignore[override]
+        self: OptionsFlowOnFakeEntry,
+    ) -> FakeConfigEntry:
+        """Return the fake entry in place of the one core would resolve."""
+        return self._fake_entry
+
+
+def options_flow_for(entry: FakeConfigEntry) -> FeedparserOptionsFlowHandler:
+    """Return an options flow handler wired to a fake config entry."""
+    return OptionsFlowOnFakeEntry(entry)
 
 
 def test_the_options_flow_lets_the_core_supply_the_entry() -> None:
