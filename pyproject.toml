@@ -3,7 +3,7 @@ name = "homeassistant.sensor.feedparser"
 version = "1.2.0"
 description = "Home Assistant custom integration to parse RSS feeds"
 maintainers = [
-  {name = "Tim Bayer", email = "mail@timbayer.de"}
+  { name = "Tim Bayer", email = "mail@timbayer.de" }
 ]
 keywords = [
   "homeassistant",
