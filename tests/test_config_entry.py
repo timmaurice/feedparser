@@ -285,8 +285,8 @@ def test_the_options_flow_lets_the_core_supply_the_entry() -> None:
     `async_get_options_flow` passes the entry in and `__init__` assigns
     `self.config_entry`, raises AttributeError against that property and takes
     the options form down. Both halves of the contract are pinned here because
-    the suite runs against a core old enough that the broken pattern still
-    works, so nothing else would notice it coming back.
+    the schema tests reach the handler through a double that answers
+    `config_entry` itself, so they are not what guards against it coming back.
     """
     entry = FakeConfigEntry({"feed_url": "https://example.com"})
     flow = FeedparserConfigFlow.async_get_options_flow(entry)  # type: ignore[arg-type]

@@ -171,12 +171,11 @@ class FeedparserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         a reverse proxy in front of a self hosted feed is exactly the case
         where nothing about the feed has changed except where it is served.
 
-        The entry is resolved and written through `hass.config_entries` rather
-        than through `_get_reconfigure_entry` and `async_update_reload_and_abort`,
-        which do the same two things: those helpers arrived in core 2024.11 and
-        the newest stubs that install on the Python the hooks run under stop at
-        2024.3, so the suite could only pin stand-ins for them. Both calls used
-        here exist either side of that line.
+        The entry is resolved and written through `hass.config_entries`
+        directly. `_get_reconfigure_entry` and `async_update_reload_and_abort`
+        (core 2024.11) do the same two things; the direct calls date from when
+        CI type-checked against the core 2024.3 stubs, which lack the helpers,
+        and they work on every core hacs.json allows.
         """
         entry = self.hass.config_entries.async_get_entry(
             self.context.get("entry_id", ""),
@@ -258,11 +257,8 @@ class FeedparserOptionsFlowHandler(config_entries.OptionsFlow):
 
         # From core 2024.11 on `OptionsFlow.config_entry` is a read-only
         # property that resolves the entry this flow was opened for, which is
-        # why the handler takes none and stores none. The newest stubs that
-        # install on the Python the hooks run under stop at core 2024.3, where
-        # the attribute does not exist yet, so mypy cannot see it - a gap in
-        # the pinned stubs, not in the code. hacs.json requires 2026.1.
-        entry = self.config_entry  # type: ignore[attr-defined]
+        # why the handler takes none and stores none.
+        entry = self.config_entry
         options = entry.options
 
         # Helper to get value from options or data. A config entry is an
