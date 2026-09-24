@@ -28,7 +28,7 @@ jobs:
         python-version: ["3.14"]
     steps:
       - name: Install xmllint
-        run: sudo apt -y install libxml2-utils
+        run: sudo apt-get update && sudo apt-get -y install libxml2-utils
 
       - name: Checkout Repository
         uses: actions/checkout@v5
