@@ -22,6 +22,8 @@ from custom_components.feedparser.parser import is_parsable_feed
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from homeassistant.data_entry_flow import FlowResult
+
 FEED_URL = "https://example.com/feed.xml"
 A_REAL_FEED = DATA_PATH / "ntv.xml"
 # What a plain web page looks like: reachable, parses, is not a feed.
@@ -245,9 +247,17 @@ def reconfigure_flow(
     """
     monkeypatch.setattr(config_flow, "FeedparserAPI", fetching(result))
     flow = config_flow.FeedparserConfigFlow()
-    flow.hass = HassWithEntries(entries)  # type: ignore[assignment]
+    hass = HassWithEntries(entries)
+    flow.hass = hass  # type: ignore[assignment]
     flow.context = {"source": "reconfigure", "entry_id": entry_id}
-    return flow, flow.hass.config_entries  # type: ignore[attr-defined]
+    return flow, hass.config_entries
+
+
+def prefilled_url(result: FlowResult) -> str:
+    """Return the URL the form's field opens on."""
+    data_schema = result["data_schema"]
+    assert data_schema is not None, "the step showed no form"
+    return data_schema({})["feed_url"]
 
 
 def an_entry(url: str = FEED_URL, entry_id: str = "entry-1") -> FakeEntry:
@@ -262,7 +272,7 @@ def test_reconfigure_prefills_the_url_the_entry_has(
     flow, _ = reconfigure_flow(monkeypatch, A_REAL_FEED.read_bytes(), [an_entry()])
     result = asyncio.run(flow.async_step_reconfigure())
     assert result["step_id"] == "reconfigure"
-    assert result["data_schema"]({})["feed_url"] == FEED_URL
+    assert prefilled_url(result) == FEED_URL
 
 
 def test_reconfigure_moves_the_feed_and_its_unique_id(
@@ -318,7 +328,7 @@ def test_reconfigure_rejects_a_url_that_is_not_a_feed(
     assert entry.data["feed_url"] == FEED_URL
     assert entries.updates == []
     # the rejected URL stays in the field, so it can be corrected
-    assert result["data_schema"]({})["feed_url"] == NEW_FEED_URL
+    assert prefilled_url(result) == NEW_FEED_URL
 
 
 def test_reconfigure_rejects_an_unreachable_url(
