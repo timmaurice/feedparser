@@ -1,0 +1,9 @@
+{
+  "entity": {
+    "sensor": {
+      "feed": {
+        "default": "mdi:rss"
+      }
+    }
+  }
+}

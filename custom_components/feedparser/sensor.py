@@ -166,7 +166,12 @@ class FeedParserSensor(CoordinatorEntity[FeedparserCoordinator], SensorEntity):
     # No force_update: Home Assistant already writes a new state whenever the
     # attributes change, so forcing one only makes every poll of an unchanged
     # feed a recorder write.
-    _attr_icon = "mdi:rss"
+
+    # The icon comes from icons.json through this key, so it is not written into
+    # every state. The key names no entity text: both kinds of sensor set
+    # `_attr_name` below, and an explicit name wins over a translated one, so
+    # `strings.json` has nothing to carry for it.
+    _attr_translation_key = "feed"
     _attr_attribution = "Data retrieved using RSS feedparser"
 
     def __init__(
