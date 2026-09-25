@@ -28,6 +28,8 @@
     },
     "error": {
       "cannot_connect": "Failed to connect",
+      "forbidden": "The server refused the request (HTTP 403). The feed may block automated clients.",
+      "not_found": "The server has no feed at this URL (HTTP 404 or 410).",
       "invalid_feed": "This URL is reachable, but it does not serve an RSS or Atom feed.",
       "already_configured": "Another feed is already configured for this URL.",
       "invalid_auth": "Invalid authentication",

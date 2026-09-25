@@ -80,9 +80,17 @@ FILTERABLE_FIELDS = [
 ]
 
 REQUEST_TIMEOUT = 30
+# Some feeds only answer a browser (#1), so a browser is what the first request
+# claims to be. A frozen browser string goes stale, though, and some servers
+# reject an outdated Chrome with 403 (#7). Move the version forward now and then.
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    "(KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36"
+)
+# Sent instead when a server refuses the browser string with 403, so a feed does
+# not stop working just because USER_AGENT has aged.
+FALLBACK_USER_AGENT = (
+    "HomeAssistant-Feedparser (+https://github.com/timmaurice/feedparser)"
 )
 REQUEST_HEADERS = {
     "User-Agent": USER_AGENT,

@@ -28,6 +28,8 @@
     },
     "error": {
       "cannot_connect": "Verbindung fehlgeschlagen",
+      "forbidden": "Der Server hat die Anfrage abgelehnt (HTTP 403). Der Feed sperrt möglicherweise automatische Abrufe.",
+      "not_found": "Unter dieser URL gibt es beim Server keinen Feed (HTTP 404 oder 410).",
       "invalid_feed": "Diese URL ist erreichbar, liefert aber keinen RSS- oder Atom-Feed.",
       "already_configured": "Für diese URL ist bereits ein anderer Feed eingerichtet.",
       "invalid_auth": "Ungültige Authentifizierung",

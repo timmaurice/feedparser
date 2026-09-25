@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 import aiohttp
@@ -97,6 +98,16 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     },
 )
 
+# The HTTP answers worth naming in the form. Everything else, and a server that
+# never answered, stays "cannot_connect". A 403 only lands here after api.py has
+# retried it with its fallback User-Agent.
+HTTP_STATUS_ERRORS: dict[int | None, str] = {
+    HTTPStatus.UNAUTHORIZED: "invalid_auth",
+    HTTPStatus.FORBIDDEN: "forbidden",
+    HTTPStatus.NOT_FOUND: "not_found",
+    HTTPStatus.GONE: "not_found",
+}
+
 
 async def async_validate_feed(hass: HomeAssistant, url: str) -> str | None:
     """Return the error key for `url`, or None when it serves a feed.
@@ -106,7 +117,10 @@ async def async_validate_feed(hass: HomeAssistant, url: str) -> str | None:
     """
     try:
         content = await FeedparserAPI(hass).async_fetch(url)
-    except (FeedparserApiError, aiohttp.InvalidURL, ValueError):
+    except FeedparserApiError as err:
+        _LOGGER.debug("%s", err)
+        return HTTP_STATUS_ERRORS.get(err.status, "cannot_connect")
+    except (aiohttp.InvalidURL, ValueError):
         return "cannot_connect"
     except Exception:
         # Whatever it was, it must not reach the user as an unhandled flow
