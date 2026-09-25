@@ -9,12 +9,19 @@ would only pin what the fake does - and a hass that holds nothing else.
 from __future__ import annotations
 
 import asyncio
+import logging
+from datetime import timedelta
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
 import pytest
+from homeassistant import loader
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.entity_platform import EntityPlatform
 
 import custom_components.feedparser as integration
 from custom_components.feedparser import sensor
@@ -25,7 +32,8 @@ from custom_components.feedparser.diagnostics import (
 from custom_components.feedparser.parser import FeedParserConfig
 
 if TYPE_CHECKING:
-    from datetime import timedelta
+    from collections.abc import Callable
+    from pathlib import Path
 
     from homeassistant.helpers.entity import Entity
 
@@ -67,6 +75,14 @@ class FakeCoordinator:
     async def async_refresh(self: FakeCoordinator) -> None:
         """Refresh the way the YAML platform does."""
         self.refreshes += 1
+
+    def async_add_listener(
+        self: FakeCoordinator,
+        update_callback: Callable[[], None],  # noqa: ARG002
+        context: Any = None,  # noqa: ANN401, ARG002
+    ) -> Callable[[], None]:
+        """Accept the entity's listener the way the core coordinator does."""
+        return lambda: None
 
 
 class FakeConfigEntries:
@@ -302,3 +318,80 @@ def test_diagnostics_of_a_real_entry_that_never_set_up() -> None:
     )
     assert "setup" in report
     assert report["entry"]["data"]["feed_url"] == FEED_URL
+
+
+class EntryLookup:
+    """The `hass.config_entries` lookup the device registry makes."""
+
+    def __init__(self: EntryLookup, entry: ConfigEntry) -> None:
+        """Initialize."""
+        self.entry = entry
+
+    def async_get_entry(self: EntryLookup, entry_id: str) -> ConfigEntry | None:
+        """Return the entry the device is linked to."""
+        return self.entry if entry_id == self.entry.entry_id else None
+
+
+async def a_hass_with_registries(config_dir: Path, entry: ConfigEntry) -> HomeAssistant:
+    """Return a real hass whose device and entity registries are the core's."""
+    hass = HomeAssistant(str(config_dir))
+    hass.config_entries = EntryLookup(entry)  # type: ignore[assignment]
+    loader.async_setup(hass)
+    # What `dr.async_setup` does, spelled out: the stubs of older cores the
+    # type check may resolve to do not declare that function.
+    hass.data[dr.DATA_REGISTRY] = dr.DeviceRegistry(hass)
+    await dr.async_load(hass)
+    await er.async_load(hass)
+    return hass
+
+
+def test_an_existing_device_becomes_a_service_on_the_next_setup(
+    tmp_path: Path,
+) -> None:
+    """Test that a feed set up before `entry_type` keeps its device.
+
+    Installs from before this change have a device without an entry type. The
+    registry, not a migration, is what has to turn it into a service: the
+    entity platform hands the device info to `async_get_or_create`, which finds
+    the device by its identifiers and updates it in place. So the device keeps
+    its id - and the area, name and labels a user gave it - and no second
+    device appears next to it.
+    """
+
+    async def run() -> tuple[dr.DeviceEntry, object, int]:
+        entry = a_config_entry()
+        hass = await a_hass_with_registries(tmp_path, entry)
+        registry = dr.async_get(hass)
+        before = registry.async_get_or_create(
+            config_entry_id=ENTRY_ID,
+            identifiers={(DOMAIN, ENTRY_ID)},
+            name="Some Feed",
+            manufacturer="RSS",
+            model="Feed",
+        )
+        entry.runtime_data = FakeCoordinator()
+        platform = EntityPlatform(
+            hass=hass,
+            logger=logging.getLogger(__name__),
+            domain="sensor",
+            platform_name=DOMAIN,
+            # The platform module is typed against a protocol that also
+            # declares `setup_platform`, which this integration has no use for.
+            platform=sensor,  # type: ignore[arg-type]
+            scan_interval=timedelta(seconds=30),
+            entity_namespace=None,
+        )
+        await platform.async_setup_entry(entry)
+        await hass.async_block_till_done()
+        after = registry.async_get(before.id)
+        devices = len(registry.devices)
+        await hass.async_stop(force=True)
+        return before, after, devices
+
+    before, after, devices = asyncio.run(run())
+    assert before.entry_type is None
+    assert isinstance(after, dr.DeviceEntry)
+    assert after.entry_type is dr.DeviceEntryType.SERVICE
+    assert after.id == before.id
+    assert after.identifiers == before.identifiers == {(DOMAIN, ENTRY_ID)}
+    assert devices == 1

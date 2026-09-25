@@ -11,6 +11,7 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
 from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
+from homeassistant.helpers.device_registry import DeviceEntryType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
@@ -99,11 +100,18 @@ def yaml_unique_id(config: FeedParserConfig) -> str:
 
 
 def device_info(config: FeedParserConfig, entry_id: str) -> DeviceInfo:
-    """Return the device a UI configured feed's entity is grouped under."""
-    # Built as a plain dict on purpose: DeviceInfo is a TypedDict, and the
-    # module it lives in has moved between Home Assistant versions.
+    """Return the device a UI configured feed's entity is grouped under.
+
+    A feed is a web service, not hardware, so the device is a service device,
+    and Home Assistant lists it as a service rather than as a device. The
+    registry sets `entry_type` on a device that already exists at the entry's
+    next setup, so an existing feed keeps its device - its id, area and name.
+    Manufacturer and model stay generic: a feed has a publisher, not a vendor,
+    and the integration is not a service provider whose name belongs there.
+    """
     info: DeviceInfo = {
         "identifiers": {(DOMAIN, entry_id)},
+        "entry_type": DeviceEntryType.SERVICE,
         "name": config.name,
         "manufacturer": "RSS",
         "model": "Feed",
