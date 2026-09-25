@@ -17,3 +17,11 @@ updates:
       interval: "daily"
     labels:
       - "dependencies"
+    # feedparser stays on the version Home Assistant core pins for its own
+    # feedreader integration (homeassistant/components/feedreader/manifest.json).
+    # The official image installs requirements_all.txt, so that version is
+    # already there: pinning the same one means nothing is installed at startup,
+    # and a user of both integrations does not get two exact pins fighting over
+    # one package. Move it when core moves feedreader.
+    ignore:
+      - dependency-name: "feedparser"
