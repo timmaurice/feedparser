@@ -12,7 +12,7 @@ jobs:
       contents: write
     steps:
       # 1. Checkout code
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # 2. Create ZIP in repo root (only feedparser folder)
       - name: Create zip archive for HACS
