@@ -32,11 +32,12 @@ from .coordinator import FeedparserCoordinator
 from .parser import FeedParserConfig, state_attributes
 
 if TYPE_CHECKING:
-    from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.device_registry import DeviceInfo
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
     from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
+
+    from .coordinator import FeedparserConfigEntry
 
 __version__ = "1.2.0"
 
@@ -118,7 +119,14 @@ async def async_setup_platform(
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType | None = None,  # noqa: ARG001
 ) -> None:
-    """Set up the Feedparser sensor from YAML."""
+    """Set up the Feedparser sensor from YAML.
+
+    A YAML sensor has no config entry, so there is no `runtime_data` to put
+    its coordinator on - and nothing needs to find it there: no unload, reload
+    or diagnostics goes through a platform set up this way. The entity is the
+    coordinator's only owner and listener, which is also what stops its
+    polling when the entity is removed. Nothing is kept in `hass.data` for it.
+    """
     parser_config = FeedParserConfig(
         feed_url=config[CONF_FEED_URL],
         name=config[CONF_NAME],
@@ -141,13 +149,14 @@ async def async_setup_platform(
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
+    hass: HomeAssistant,  # noqa: ARG001
+    entry: FeedparserConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Feedparser sensor from a config entry."""
-    coordinator: FeedparserCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([FeedParserSensor(coordinator, entry_id=entry.entry_id)])
+    async_add_entities(
+        [FeedParserSensor(entry.runtime_data, entry_id=entry.entry_id)],
+    )
 
 
 class FeedParserSensor(CoordinatorEntity[FeedparserCoordinator], SensorEntity):

@@ -12,7 +12,6 @@ from .const import (
     CONF_INCLUSIONS,
     CONF_SHOW_TOPN,
     DEFAULT_TOPN,
-    DOMAIN,
     MIN_TOPN,
     UNLIMITED_TOPN,
     as_field_list,
@@ -22,6 +21,8 @@ from .coordinator import build_coordinator
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
+
+    from .coordinator import FeedparserConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,12 +36,15 @@ TOPN_FLOOR_VERSION = 4
 CONFIG_ENTRY_VERSION = TOPN_FLOOR_VERSION
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: FeedparserConfigEntry) -> bool:
     """Set up Feedparser from a config entry."""
     coordinator = build_coordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    # Only after the first refresh: an entry that raised ConfigEntryNotReady
+    # there has no runtime_data at all, which is how diagnostics tells an
+    # entry that never set up from one that did.
+    entry.runtime_data = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -49,14 +53,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: FeedparserConfigEntry) -> bool:
     """Unload a config entry."""
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        hass.data[DOMAIN].pop(entry.entry_id, None)
-    return unload_ok
+    # Nothing to clean up here: Home Assistant deletes `entry.runtime_data`
+    # itself once the unload succeeded, and keeps it when it failed - which is
+    # what popping the coordinator out of `hass.data` on success used to do by
+    # hand.
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
-async def update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def update_listener(hass: HomeAssistant, entry: FeedparserConfigEntry) -> None:
     """Update listener."""
     await hass.config_entries.async_reload(entry.entry_id)
 

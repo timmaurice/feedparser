@@ -7,14 +7,13 @@ import re
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
-from .const import DOMAIN, MAX_STATE_ATTRS_BYTES
+from .const import MAX_STATE_ATTRS_BYTES
 from .parser import attributes_size, state_attributes
 
 if TYPE_CHECKING:
-    from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
 
-    from .coordinator import FeedparserCoordinator
+    from .coordinator import FeedparserConfigEntry, FeedparserCoordinator
 
 REDACTED = "**REDACTED**"
 
@@ -73,8 +72,8 @@ def attribute_size(coordinator: FeedparserCoordinator) -> int | None:
 
 
 async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
+    hass: HomeAssistant,  # noqa: ARG001
+    entry: FeedparserConfigEntry,
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry.
 
@@ -83,13 +82,16 @@ async def async_get_config_entry_diagnostics(
     one whose entries are being filtered away or dropped by the recorder.
 
     An entry whose setup failed has no coordinator, and that is the entry a
-    report is most likely to be downloaded for. Reaching into `hass.data` for
-    it unguarded turned "Download diagnostics" into a traceback; what is known
+    report is most likely to be downloaded for. Reading its coordinator
+    unguarded turned "Download diagnostics" into a traceback; what is known
     about such an entry - its stored settings - is reported instead.
+
+    Such an entry has no `runtime_data` attribute at all rather than one that
+    is None: setup only assigns it after the first refresh succeeded, and Home
+    Assistant deletes it again on unload. Reading it plainly would raise an
+    AttributeError, so it is read with a default.
     """
-    coordinator: FeedparserCoordinator | None = hass.data.get(DOMAIN, {}).get(
-        entry.entry_id,
-    )
+    coordinator: FeedparserCoordinator | None = getattr(entry, "runtime_data", None)
     entry_report = {
         "version": entry.version,
         "data": {
