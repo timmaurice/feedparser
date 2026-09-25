@@ -64,6 +64,10 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
+# The coordinator does the fetching, and the entity only reads what it holds, so
+# there is no per-entity update to serialise.
+PARALLEL_UPDATES = 0
+
 # Only a URL the browser can open belongs on the device page.
 WEB_SCHEMES = frozenset({"http", "https"})
 

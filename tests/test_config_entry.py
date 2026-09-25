@@ -58,7 +58,7 @@ class FakeConfigEntries:
         self.updates: list[dict[str, Any]] = []
 
     # What `hass.config_entries.async_update_entry` accepts from Home Assistant
-    # 2026.1 on, which is the version `hacs.json` requires. Spelled out so a
+    # 2026.1 on, and `hacs.json` requires a later core. Spelled out so a
     # call passing a keyword no Home Assistant takes fails here rather than in
     # production. It cannot catch `version=` against an older core - the fake
     # accepts it, exactly as the supported one does - so a core below 2026.1 is
@@ -162,7 +162,7 @@ def test_the_fake_rejects_what_home_assistant_would_reject() -> None:
 
     A fake that swallows `**kwargs` would let the migration pass a keyword no
     Home Assistant takes and no test would notice. `version=` is not such a
-    keyword: it is accepted from 2026.1 on, which is what `hacs.json` requires,
+    keyword: it is accepted from 2026.1 on, below the core `hacs.json` requires,
     and the fake accepts it for the same reason - so it is pinned as accepted,
     not as rejected.
     """
@@ -279,9 +279,9 @@ def options_flow_for(entry: FakeConfigEntry) -> FeedparserOptionsFlowHandler:
 def test_the_options_flow_lets_the_core_supply_the_entry() -> None:
     """Test that the options flow neither takes nor stores a config entry.
 
-    From Home Assistant 2026.1 - the core `hacs.json` requires - `config_entry`
-    on an options flow is a read-only property that resolves the entry from
-    `hass` via the flow's handler id. The older pattern, where
+    From Home Assistant 2026.1 - below the core `hacs.json` requires -
+    `config_entry` on an options flow is a read-only property that resolves the
+    entry from `hass` via the flow's handler id. The older pattern, where
     `async_get_options_flow` passes the entry in and `__init__` assigns
     `self.config_entry`, raises AttributeError against that property and takes
     the options form down. Both halves of the contract are pinned here because

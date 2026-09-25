@@ -16,7 +16,11 @@ from custom_components.feedparser.const import (
     MAX_STATE_ATTRS_BYTES,
     UNLIMITED_TOPN,
 )
-from custom_components.feedparser.sensor import PLATFORM_SCHEMA, FeedParserSensor
+from custom_components.feedparser.sensor import (
+    PARALLEL_UPDATES,
+    PLATFORM_SCHEMA,
+    FeedParserSensor,
+)
 
 if TYPE_CHECKING:
     from feedsource import FeedSource
@@ -137,3 +141,12 @@ def test_a_feed_that_has_not_been_polled_yet_has_no_attributes(
         "channel": {},
         "entries": [],
     }
+
+
+def test_the_platform_does_not_limit_parallel_updates() -> None:
+    """Test that the sensor platform sets no update limit.
+
+    The entity reads what the coordinator holds and fetches nothing itself, so
+    there is no per-entity update for Home Assistant to serialise.
+    """
+    assert PARALLEL_UPDATES == 0

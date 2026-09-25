@@ -10,9 +10,10 @@ on:
   workflow_dispatch:
 
 env:
-  # The oldest core this job is willing to call a valid run. It is not the
-  # oldest core the integration supports (hacs.json says 2026.1.0) - it is a
-  # tripwire. See the "Report and check the resolved core" step.
+  # The oldest core this job is willing to call a valid run, and the minimum
+  # hacs.json declares: an older core is one the suite has never run against,
+  # so it is not one to promise. Raise both together. It is also a tripwire -
+  # see the "Report and check the resolved core" step.
   MINIMUM_CORE: "2026.9.3"
 
 jobs:
@@ -24,7 +25,7 @@ jobs:
         # Home Assistant dropped Python 3.12 after 2025.1.4; 2025.2.0+ need
         # >=3.13 and 2026.3.0+ need >=3.14.2. On 3.11 pip could still satisfy
         # .[dev] - by backtracking all the way to core 2024.3.3 - so the suite
-        # was green against a core hacs.json (2026.1.0) does not even allow.
+        # was green against a core hacs.json (then 2026.1.0) did not even allow.
         python-version: ["3.14"]
     steps:
       - name: Install xmllint
