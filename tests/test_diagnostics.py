@@ -6,6 +6,7 @@ import asyncio
 from typing import Any
 
 from constants import DATA_PATH
+from homeassistant.helpers.device_registry import DeviceEntryType
 
 from custom_components.feedparser.const import DOMAIN, MAX_STATE_ATTRS_BYTES
 from custom_components.feedparser.diagnostics import (
@@ -170,8 +171,14 @@ def test_a_ui_sensor_is_grouped_under_a_device() -> None:
     )
     assert sensor.unique_id == ENTRY_ID
     assert sensor.device_info is not None
-    assert sensor.device_info["identifiers"] == {(DOMAIN, ENTRY_ID)}
-    assert sensor.device_info["name"] == "ntv"
+    assert sensor.device_info == {
+        "identifiers": {(DOMAIN, ENTRY_ID)},
+        # A feed is a web service, so its device is listed as one.
+        "entry_type": DeviceEntryType.SERVICE,
+        "name": "ntv",
+        "manufacturer": "RSS",
+        "model": "Feed",
+    }
     # The device carries the name, so the entity must not append its own -
     # otherwise the friendly name of an existing sensor becomes "ntv ntv".
     assert sensor._attr_name is None  # noqa: SLF001

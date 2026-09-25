@@ -160,8 +160,11 @@ in a dashboard, and anything reading these attributes should treat it as such.
 ### Entities, devices and diagnostics
 
 Each feed added through the UI gets a device of its own, named after the feed
-and linking to the feed URL, with the sensor as its single entity. The entity
-keeps the name and the entity id it already had.
+and linking to the feed URL, with the sensor as its single entity. The device
+is a service device, so Home Assistant lists it under the integration's
+services rather than its devices; a feed that was set up before keeps the same
+device, with its area and name. The entity keeps the name and the entity id it
+already had.
 
 YAML feeds now have a stable unique id as well, so they show up in the entity
 registry and can be renamed, hidden or assigned to an area like any other
