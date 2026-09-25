@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -31,7 +32,6 @@ from .parser import FeedParserConfig, ParsedFeed, parse_feed
 if TYPE_CHECKING:
     from datetime import timedelta
 
-    from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
@@ -77,9 +77,19 @@ class FeedparserCoordinator(DataUpdateCoordinator[ParsedFeed]):
         )
 
 
+# A set up config entry carries its coordinator on `entry.runtime_data`. Home
+# Assistant deletes that attribute again once the entry has unloaded, so the
+# coordinator lives exactly as long as the entry is loaded and there is no map
+# in `hass.data` to keep in step with it.
+#
+# Spelled as a `TypeAlias` rather than a `type` statement: the black and ruff
+# versions pinned in pre-commit predate PEP 695 and cannot parse one.
+FeedparserConfigEntry: TypeAlias = ConfigEntry[FeedparserCoordinator]
+
+
 def build_coordinator(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: FeedparserConfigEntry,
 ) -> FeedparserCoordinator:
     """Create the coordinator for a config entry."""
     config = entry.data

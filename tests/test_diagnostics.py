@@ -59,27 +59,40 @@ class FakeEntry:
     version = ENTRY_VERSION
     entry_id = ENTRY_ID
 
-    def __init__(self: FakeEntry, data: dict[str, Any]) -> None:
-        """Initialize."""
+    def __init__(
+        self: FakeEntry,
+        data: dict[str, Any],
+        coordinator: FakeCoordinator | None = None,
+    ) -> None:
+        """Initialize.
+
+        `runtime_data` is only assigned when there is a coordinator, the way
+        setup does it: an entry that never set up has no such attribute, not
+        one that is None.
+        """
         self.data = data
         self.options: dict[str, Any] = {"show_topn": SHOWN_ENTRIES}
+        if coordinator is not None:
+            self.runtime_data = coordinator
 
 
 class FakeHass:
-    """Just enough of hass to hold a coordinator."""
+    """A hass that holds nothing: diagnostics has no reason to look in it."""
 
-    def __init__(self: FakeHass, coordinator: FakeCoordinator) -> None:
+    def __init__(self: FakeHass) -> None:
         """Initialize."""
-        self.data = {DOMAIN: {ENTRY_ID: coordinator}}
+        self.data: dict[str, Any] = {}
 
 
 def diagnostics(url: str = "https://example.com/feed.xml") -> dict[str, Any]:
     """Run the diagnostics platform against a parsed fixture."""
     coordinator = FakeCoordinator(parser_config())
-    hass = FakeHass(coordinator)
-    entry = FakeEntry({"name": "ntv", "feed_url": url})
+    entry = FakeEntry({"name": "ntv", "feed_url": url}, coordinator)
     return asyncio.run(
-        async_get_config_entry_diagnostics(hass, entry),  # type: ignore[arg-type]
+        async_get_config_entry_diagnostics(
+            FakeHass(),  # type: ignore[arg-type]
+            entry,  # type: ignore[arg-type]
+        ),
     )
 
 
@@ -174,15 +187,16 @@ def test_a_file_feed_gets_no_configuration_url() -> None:
 def test_diagnostics_survive_an_entry_that_never_set_up() -> None:
     """Test that a failed entry gets a report rather than a traceback.
 
-    An entry whose setup failed has no coordinator in `hass.data`, and it is
-    the entry somebody is most likely to download diagnostics for. Reading it
-    unguarded made the download raise a KeyError on exactly that entry.
+    An entry whose setup failed has no `runtime_data`, and it is the entry
+    somebody is most likely to download diagnostics for. Reading its
+    coordinator unguarded made the download raise on exactly that entry.
     """
-    hass = FakeHass(FakeCoordinator(parser_config()))
-    hass.data[DOMAIN] = {}
     entry = FakeEntry({"name": "ntv", "feed_url": "https://user:pw@example.com/f.xml"})
     report = asyncio.run(
-        async_get_config_entry_diagnostics(hass, entry),  # type: ignore[arg-type]
+        async_get_config_entry_diagnostics(
+            FakeHass(),  # type: ignore[arg-type]
+            entry,  # type: ignore[arg-type]
+        ),
     )
     assert report["entry"]["version"] == ENTRY_VERSION
     assert "pw@" not in report["entry"]["data"]["feed_url"]
