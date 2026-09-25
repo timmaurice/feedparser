@@ -10,7 +10,6 @@ import aiohttp
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestServer
-from homeassistant.core import HomeAssistant
 
 from custom_components.feedparser import api as api_module
 from custom_components.feedparser.api import FeedparserAPI, FeedparserApiError
@@ -19,6 +18,8 @@ from custom_components.feedparser.const import FALLBACK_USER_AGENT, USER_AGENT
 if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
+
+    from homeassistant.core import HomeAssistant
 
 
 class FakeHass:
