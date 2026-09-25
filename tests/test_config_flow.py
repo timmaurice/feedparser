@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -95,6 +96,25 @@ def test_an_unreachable_url_still_says_cannot_connect(
 ) -> None:
     """Test that a fetch failure keeps its own error key."""
     assert validate(monkeypatch, FeedparserApiError("boom")) == "cannot_connect"
+
+
+@pytest.mark.parametrize(
+    ("status", "error"),
+    [
+        (HTTPStatus.UNAUTHORIZED, "invalid_auth"),
+        (HTTPStatus.FORBIDDEN, "forbidden"),
+        (HTTPStatus.NOT_FOUND, "not_found"),
+        (HTTPStatus.GONE, "not_found"),
+        (HTTPStatus.INTERNAL_SERVER_ERROR, "cannot_connect"),
+    ],
+)
+def test_an_http_error_says_what_the_server_answered(
+    monkeypatch: pytest.MonkeyPatch,
+    status: HTTPStatus,
+    error: str,
+) -> None:
+    """Test that a refused or missing feed is not reported as unreachable (#7)."""
+    assert validate(monkeypatch, FeedparserApiError("boom", status)) == error
 
 
 def test_an_unexpected_error_becomes_unknown(
