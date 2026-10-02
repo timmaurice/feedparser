@@ -18,17 +18,37 @@ PYPROJECT_DEPENDENCIES = re.compile(r"^dependencies = \[(.*?)^\]", re.M | re.S)
 QUOTED = re.compile(r'"([^"]+)"')
 
 
-def test_every_requirement_is_pinned() -> None:
-    """Test that the manifest pins its requirements to an exact version.
+# Home Assistant pins `feedparser` for its own `feedreader` integration, and
+# hassfest rejects an exact pin of a package core ships: it would break the day
+# core moves on. Those get a minimum at core's version instead.
+SHIPPED_BY_CORE = {"feedparser"}
+REQUIREMENT = re.compile(r"^([A-Za-z0-9_.-]+)(==|>=)(.+)$")
 
-    Home Assistant installs these into the running instance, so an unpinned one
+
+def manifest_requirements() -> dict[str, tuple[str, str]]:
+    """Return the manifest requirements as name -> (operator, version)."""
+    parsed = {}
+    for requirement in json.loads(MANIFEST.read_text())["requirements"]:
+        match = REQUIREMENT.match(requirement)
+        assert match, f"{requirement} names no single version"
+        name, operator, version = match.groups()
+        parsed[name] = (operator, version)
+    return parsed
+
+
+def test_every_requirement_names_one_version() -> None:
+    """Test that each requirement is tied to one version, the right way round.
+
+    Home Assistant installs these into the running instance, so an unbounded one
     means the integration ships whatever version happens to be current at
-    install time - and HACS validation warns about it.
+    install time. Our own requirements are pinned exactly; a package core ships
+    gets a minimum at core's version, as hassfest demands.
     """
-    requirements = json.loads(MANIFEST.read_text())["requirements"]
+    requirements = manifest_requirements()
     assert requirements
-    unpinned = [req for req in requirements if "==" not in req]
-    assert unpinned == []
+    for name, (operator, _) in requirements.items():
+        expected = ">=" if name in SHIPPED_BY_CORE else "=="
+        assert operator == expected, f"{name} should use {expected}"
 
 
 def pyproject_dependencies() -> list[str]:
@@ -57,8 +77,7 @@ def test_pyproject_pins_what_the_manifest_pins() -> None:
         if "==" not in dependency and dependency != "homeassistant"
     ]
     assert unpinned == []
-    for requirement in json.loads(MANIFEST.read_text())["requirements"]:
-        name, version = requirement.split("==", 1)
+    for name, (_, version) in manifest_requirements().items():
         assert declared.get(name) == version, f"{name} disagrees with the manifest"
 
 
