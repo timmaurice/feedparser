@@ -16,10 +16,18 @@ env:
   # see the "Report and check the resolved core" step.
   MINIMUM_CORE: "2026.9.3"
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   codechecks:
     name: Code Quality
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       matrix:
         # Home Assistant dropped Python 3.12 after 2025.1.4; 2025.2.0+ need
@@ -32,15 +40,17 @@ jobs:
         run: sudo apt-get update && sudo apt-get -y install libxml2-utils
 
       - name: Checkout Repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set Up Python-${{ matrix.python-version }}
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Pre Commit Checks
-        uses: pre-commit/action@v3.0.1
+        uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
 
       - name: Install Dependencies
         run: pip install .[dev]
