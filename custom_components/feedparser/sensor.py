@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
     from .coordinator import FeedparserConfigEntry
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
