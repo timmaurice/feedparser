@@ -14,16 +14,19 @@ RSS feed custom component for [Home Assistant](https://www.home-assistant.io/) w
 
 ## Installation
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![Marketplace / HACS](https://img.shields.io/badge/Marketplace%20%2F%20HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/marketplace/)
 
-1. Open HACS Settings and add this repository (https://github.com/timmaurice/feedparser)
-   as a Custom Repository (use **Integration** as the category).
-2. The `feedparser` page should automatically load (or find it in the HACS Store)
-3. Click `Install`
+This integration is not in the default catalog, so it is added as a custom repository. The button does that in whichever your Home Assistant has: the **Marketplace** from Home Assistant 2026.11, HACS before.
 
-Alternatively, click on the button below to add the repository:
+[![Open this repository in the Marketplace or HACS of your Home Assistant instance.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?category=Integration&repository=feedparser&owner=timmaurice)
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?category=Integration&repository=feedparser&owner=timmaurice)
+**Marketplace (Home Assistant 2026.11 and newer):** Once the button has added the repository, click **Install**. The integration can be set up right away, without a restart. Updates for a repository added this way need a connected GitHub account (device sign-in, public data only) and are checked every 48 hours.
+
+**HACS (before 2026.11):**
+
+1. Open HACS, choose **⋮** → **Custom repositories** and add `https://github.com/timmaurice/feedparser` with the type **Integration**, or use the button above.
+2. Open **A better Feedparser** and click **Download**.
+3. Restart Home Assistant.
 
 ## Configuration
 
