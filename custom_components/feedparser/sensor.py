@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
+import probatio as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
 from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.helpers.device_registry import DeviceEntryType

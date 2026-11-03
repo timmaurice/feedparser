@@ -6,8 +6,8 @@ import asyncio
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
+import probatio as vol
 import pytest
-import voluptuous as vol
 from constants import DATA_PATH
 from test_config_entry import options_schema
 

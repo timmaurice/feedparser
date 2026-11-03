@@ -7,7 +7,7 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 import aiohttp
-import voluptuous as vol
+import probatio as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import callback
