@@ -5,8 +5,8 @@ from __future__ import annotations
 import asyncio
 from typing import Any, cast
 
+import probatio as vol
 import pytest
-import voluptuous as vol
 
 from custom_components.feedparser import CONFIG_ENTRY_VERSION, async_migrate_entry
 from custom_components.feedparser.config_flow import (

@@ -25,3 +25,8 @@ updates:
     # one package. Move it when core moves feedreader.
     ignore:
       - dependency-name: "feedparser"
+      # Home Assistant core needs python-dateutil below 3.0 (through botocore),
+      # so a 3.x pin makes the dev environment unresolvable and the manifest
+      # pin would fight core at runtime. Take majors only once core allows them.
+      - dependency-name: "python-dateutil"
+        update-types: ["version-update:semver-major"]

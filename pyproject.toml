@@ -26,7 +26,7 @@ requires-python = ">=3.13.2"
 dependencies = [
   "feedparser==6.0.12",
   "homeassistant",
-  "python-dateutil==3.0.0"
+  "python-dateutil==2.9.0.post0"
 ]
 
 [project.optional-dependencies]
@@ -39,7 +39,6 @@ dev = [
   "types-python-dateutil",
   "types-PyYAML",
   "types-requests",
-  "voluptuous-stubs",
   "pyyaml",
   "bumpver"
 ]

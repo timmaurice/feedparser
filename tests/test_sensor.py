@@ -175,7 +175,7 @@ def test_a_feed_that_has_not_been_polled_yet_has_no_attributes(
     ever succeeds - the URL is the one thing that is known even then.
     """
     sensor = build_sensor(parse_local_feed(feed, show_topn=DEFAULT_TOPN), feed.name)
-    sensor.coordinator.data = None
+    sensor.coordinator.data = None  # type: ignore[assignment]  # before the first poll
     attributes = sensor.extra_state_attributes
     assert attributes == {
         "feed_url": SENSOR_FEED_URL,
