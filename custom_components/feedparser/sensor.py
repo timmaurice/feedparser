@@ -11,7 +11,7 @@ import homeassistant.helpers.config_validation as cv
 import probatio as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
 from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
-from homeassistant.helpers.device_registry import DeviceEntryType
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
@@ -34,7 +34,6 @@ from .parser import FeedParserConfig, state_attributes
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.device_registry import DeviceInfo
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
     from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
@@ -109,13 +108,13 @@ def device_info(config: FeedParserConfig, entry_id: str) -> DeviceInfo:
     Manufacturer and model stay generic: a feed has a publisher, not a vendor,
     and the integration is not a service provider whose name belongs there.
     """
-    info: DeviceInfo = {
-        "identifiers": {(DOMAIN, entry_id)},
-        "entry_type": DeviceEntryType.SERVICE,
-        "name": config.name,
-        "manufacturer": "RSS",
-        "model": "Feed",
-    }
+    info = DeviceInfo(
+        identifiers={(DOMAIN, entry_id)},
+        entry_type=DeviceEntryType.SERVICE,
+        name=config.name,
+        manufacturer="RSS",
+        model="Feed",
+    )
     if urlparse(config.feed_url).scheme in WEB_SCHEMES:
         info["configuration_url"] = config.feed_url
     return info
