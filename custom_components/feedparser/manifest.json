@@ -1,6 +1,9 @@
 {
   "domain": "feedparser",
   "name": "A better Feedparser",
+  "categories": [
+    "news_social_media"
+  ],
   "codeowners": [
     "@timmaurice"
   ],
