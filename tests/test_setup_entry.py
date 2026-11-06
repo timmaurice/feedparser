@@ -331,6 +331,13 @@ class EntryLookup:
         """Return the entry the device is linked to."""
         return self.entry if entry_id == self.entry.entry_id else None
 
+    async def async_wait_initialized(self: EntryLookup) -> None:
+        """Return at once: the one entry is there from the start.
+
+        The entity registry awaits this since Home Assistant 2026.11, before it
+        derives `disabled_by` from the config entries.
+        """
+
 
 async def a_hass_with_registries(config_dir: Path, entry: ConfigEntry) -> HomeAssistant:
     """Return a real hass whose device and entity registries are the core's."""
