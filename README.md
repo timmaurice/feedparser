@@ -79,7 +79,7 @@ sensor:
     inclusions:
       - title
       - link
-      - description
+      - summary
       - image
       - audio
       - published
@@ -117,13 +117,13 @@ Note that the original `pubDate` field is available under `published` attribute 
 | **platform (Required)**      | The platform name                                                      |
 | **name (Required)**          | Name your feed                                                         |
 | **feed_url (Required)**      | The RSS feed URL                                                       |
-| **date_format (Optional)**   | strftime date format for date strings **Default** `%a, %b %d %I:%M %p` |
+| **date_format (Optional)**   | strftime date format for date strings **Default** `%a, %b %d %Y %I:%M %p` |
 | **local_time (Optional)**    | Whether to convert date into local time **Default** false              |
 | **show_topn (Optional)**     | How many entries to fetch from the feed. **Default** in YAML: all entries |
 | **max_text_length (Optional)** | Characters kept per text field, `0` keeps the full text **Default** `250` |
 | **inclusions (Optional)**    | List of fields to include from populating the list                     |
 | **exclusions (Optional)**    | List of fields to exclude from populating the list                     |
-| **scan_interval (Optional)** | Update interval in hours                                               |
+| **scan_interval (Optional)** | Update interval as a time period, e.g. `hours: 3` **Default** 1 hour   |
 
 ---
 
