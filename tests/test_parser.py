@@ -302,7 +302,7 @@ PUBLISHED_IN_INDIA = datetime(
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def _berlin_time_zone() -> Iterator[None]:
     """Run a test as a Home Assistant whose time zone is Europe/Berlin."""
     original = dt_util.get_default_time_zone()
