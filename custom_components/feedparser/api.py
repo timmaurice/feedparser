@@ -98,6 +98,19 @@ class FeedparserAPI:
     async def _async_read_file(self: FeedparserAPI, url: str) -> bytes:
         """Read a feed from a local `file://` URL."""
         path = Path(unquote(urlparse(url).path))
+        # Without this any readable file on the host could be fetched and, if it
+        # parses as a feed, exposed. Only paths under `allowlist_external_dirs`
+        # (by default config/www and the media folders) are read. The check
+        # resolves symlinks, so it runs in the executor.
+        if not await self.hass.async_add_executor_job(
+            self.hass.config.is_allowed_path,
+            str(path),
+        ):
+            msg = (
+                f"Error reading feed from {path}: the path is not allowed, add it "
+                "to allowlist_external_dirs in the Home Assistant configuration"
+            )
+            raise FeedparserApiError(msg)
         try:
             return await self.hass.async_add_executor_job(path.read_bytes)
         except OSError as err:

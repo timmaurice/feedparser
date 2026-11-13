@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from http import HTTPStatus
+from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import aiohttp
@@ -17,13 +18,28 @@ from custom_components.feedparser.const import FALLBACK_USER_AGENT, USER_AGENT
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from pathlib import Path
 
     from homeassistant.core import HomeAssistant
 
 
+class FakeConfig:
+    """Stand-in for `hass.config` that allows a fixed set of directories."""
+
+    def __init__(self: FakeConfig, allowed: Path | None) -> None:
+        """Remember the one directory that is allowed, if any."""
+        self.allowed = allowed
+
+    def is_allowed_path(self: FakeConfig, path: str) -> bool:
+        """Allow a path inside the allowed directory."""
+        return self.allowed is not None and Path(path).is_relative_to(self.allowed)
+
+
 class FakeHass:
-    """Minimal stand-in for HomeAssistant, only needs the executor helper."""
+    """Minimal stand-in for HomeAssistant: executor helper and path allow-list."""
+
+    def __init__(self: FakeHass, allowed: Path | None = None) -> None:
+        """Allow `allowed`, or nothing."""
+        self.config = FakeConfig(allowed)
 
     @staticmethod
     async def async_add_executor_job(
@@ -35,9 +51,9 @@ class FakeHass:
 
 
 @pytest.fixture()
-def api() -> FeedparserAPI:
-    """Return an API client backed by the fake hass."""
-    return FeedparserAPI(cast("HomeAssistant", FakeHass()))
+def api(tmp_path: Path) -> FeedparserAPI:
+    """Return an API client whose fake hass allows `tmp_path`."""
+    return FeedparserAPI(cast("HomeAssistant", FakeHass(tmp_path)))
 
 
 def test_local_feed_is_read(api: FeedparserAPI, tmp_path: Path) -> None:
@@ -61,6 +77,17 @@ def test_missing_local_feed_raises(api: FeedparserAPI, tmp_path: Path) -> None:
     missing = (tmp_path / "nope.xml").absolute().as_uri()
     with pytest.raises(FeedparserApiError):
         asyncio.run(api.async_fetch(missing))
+
+
+def test_local_feed_outside_allowed_dirs_is_refused(tmp_path: Path) -> None:
+    """A file:// path Home Assistant does not allow is never read."""
+    allowed = tmp_path / "allowed"
+    allowed.mkdir()
+    secret = tmp_path / "secret.xml"
+    secret.write_bytes(b"<rss/>")
+    api = FeedparserAPI(cast("HomeAssistant", FakeHass(allowed)))
+    with pytest.raises(FeedparserApiError, match="not allowed"):
+        asyncio.run(api.async_fetch(secret.absolute().as_uri()))
 
 
 class FeedServer:
