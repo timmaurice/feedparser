@@ -66,6 +66,24 @@ YAML feeds are reconfigured by editing `configuration.yaml`. Note that changing
 derived from its URL and name — see
 [Entities, devices and diagnostics](#entities-devices-and-diagnostics).
 
+### Reading a feed from a local file
+
+A `file://` URL reads the feed from a file on the Home Assistant host, for
+example one that a script writes. Only folders listed in
+[`allowlist_external_dirs`](https://www.home-assistant.io/integrations/homeassistant/#allowlist_external_dirs)
+can be read; by default that is the `www` folder in the config directory and the
+media folders. A path anywhere else is refused with "the path is not allowed",
+so the integration cannot be used to read arbitrary files from the host.
+
+```yaml
+homeassistant:
+  allowlist_external_dirs:
+    - /config/feeds
+```
+
+Feeds that read a file outside these folders stopped working with this change;
+add their folder to `allowlist_external_dirs` and restart Home Assistant.
+
 ### Via configuration.yaml (Legacy)
 
 ```yaml

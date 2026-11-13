@@ -100,8 +100,8 @@ class FeedparserAPI:
         path = Path(unquote(urlparse(url).path))
         # Without this any readable file on the host could be fetched and, if it
         # parses as a feed, exposed. Only paths under `allowlist_external_dirs`
-        # (and the config directory) are read. The check resolves symlinks, so
-        # it runs in the executor.
+        # (by default config/www and the media folders) are read. The check
+        # resolves symlinks, so it runs in the executor.
         if not await self.hass.async_add_executor_job(
             self.hass.config.is_allowed_path,
             str(path),
