@@ -35,8 +35,11 @@ from custom_components.feedparser.parser import (
     _WARNED,
     FeedParserConfig,
     ParsedFeed,
+    attributes_size,
     parse_date,
     parse_feed,
+    recorded_attributes,
+    state_attributes,
 )
 
 if TYPE_CHECKING:
@@ -695,20 +698,41 @@ def test_max_text_length_zero_keeps_the_full_text() -> None:
     assert parsed.entries[0]["summary"] == summary
 
 
-def test_oversized_attributes_are_logged(
+def oversized_url_config(**overrides: object) -> FeedParserConfig:
+    """Return a config whose feed URL alone is larger than the recorder allows."""
+    url = ZEIT_VERBRECHEN.absolute().as_uri() + "?" + "a" * MAX_STATE_ATTRS_BYTES
+    return zeit_verbrechen_config(feed_url=url, **overrides)
+
+
+def test_oversized_recorded_attributes_are_logged(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Test that a user learns why the recorder drops their attributes."""
     caplog.set_level(logging.WARNING)
-    parse_feed(
-        ZEIT_VERBRECHEN.read_bytes(),
-        zeit_verbrechen_config(show_topn=100, max_text_length=NO_TEXT_LIMIT),
-    )
+    parse_feed(ZEIT_VERBRECHEN.read_bytes(), oversized_url_config())
     assert any(
         "zeit_verbrechen" in r.message and str(MAX_STATE_ATTRS_BYTES) in r.message
         for r in caplog.records
         if r.levelno == logging.WARNING
     ), "no warning about the recorder limit was logged"
+
+
+def test_unrecorded_entries_do_not_trigger_the_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that big entries, which the recorder skips, are not reported.
+
+    The full attributes are far over the limit here, but only `feed_url` is
+    recorded, so the history keeps its attributes and there is nothing to warn
+    about.
+    """
+    caplog.set_level(logging.WARNING)
+    config = zeit_verbrechen_config(show_topn=100, max_text_length=NO_TEXT_LIMIT)
+    parsed = parse_feed(ZEIT_VERBRECHEN.read_bytes(), config)
+    full = state_attributes(config.feed_url, parsed.channel, parsed.entries)
+    assert attributes_size(full) > MAX_STATE_ATTRS_BYTES
+    assert attributes_size(recorded_attributes(full)) < MAX_STATE_ATTRS_BYTES
+    assert not [r for r in caplog.records if r.levelno == logging.WARNING]
 
 
 def test_default_sized_feed_is_not_logged(
@@ -777,7 +801,7 @@ def test_the_oversize_warning_is_not_repeated_on_every_poll(
 ) -> None:
     """Test that a polled feed logs the recorder warning once, not hourly."""
     caplog.set_level(logging.WARNING)
-    config = zeit_verbrechen_config(show_topn=100, max_text_length=NO_TEXT_LIMIT)
+    config = oversized_url_config()
     for _ in range(3):
         parse_feed(ZEIT_VERBRECHEN.read_bytes(), config)
 
@@ -798,14 +822,8 @@ def test_the_oversize_warning_returns_when_the_settings_change(
 ) -> None:
     """Test that a user who changed the numbers is told they still do not fit."""
     caplog.set_level(logging.WARNING)
-    parse_feed(
-        ZEIT_VERBRECHEN.read_bytes(),
-        zeit_verbrechen_config(show_topn=100, max_text_length=NO_TEXT_LIMIT),
-    )
-    parse_feed(
-        ZEIT_VERBRECHEN.read_bytes(),
-        zeit_verbrechen_config(show_topn=90, max_text_length=NO_TEXT_LIMIT),
-    )
+    parse_feed(ZEIT_VERBRECHEN.read_bytes(), oversized_url_config(show_topn=100))
+    parse_feed(ZEIT_VERBRECHEN.read_bytes(), oversized_url_config(show_topn=90))
 
     warnings = [
         r

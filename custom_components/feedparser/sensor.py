@@ -28,6 +28,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     UNLIMITED_TOPN,
+    UNRECORDED_ATTRIBUTES,
 )
 from .coordinator import FeedparserCoordinator
 from .parser import FeedParserConfig, state_attributes
@@ -183,8 +184,9 @@ class FeedParserSensor(CoordinatorEntity[FeedparserCoordinator], SensorEntity):
     # `entries` and `channel` are the bulk of the attributes (up to the
     # recorder's size limit) and are rewritten whenever the feed changes. A card
     # reads them from the live state, so a copy per change in the history only
-    # grows the database. `feed_url` stays recorded.
-    _unrecorded_attributes = frozenset({"entries", "channel"})
+    # grows the database. `feed_url` stays recorded. The set lives in const so the
+    # oversize warning measures exactly what the recorder is left with.
+    _unrecorded_attributes = UNRECORDED_ATTRIBUTES
 
     def __init__(
         self: FeedParserSensor,

@@ -242,10 +242,15 @@ be pasted into an issue.
 
 ### Keeping the state attributes small
 
-The entries end up in the `entries` state attribute, and Home Assistant's
-recorder drops the attributes of a state larger than 16 KiB, which leaves the
-sensor with a history that has no entries in it. Two settings keep a feed under
-that limit:
+The entries end up in the `entries` state attribute. Home Assistant's recorder
+drops the attributes of a state whose *recorded* attributes are larger than
+16 KiB. `entries` and `channel` are excluded from the recorder (a card reads them
+from the live state), so only the small `feed_url` counts towards that limit and
+a verbose feed no longer costs the history its attributes. The integration logs a
+warning only if the recorded part is over the limit, which in practice takes an
+extremely long feed URL. The live state itself has no such limit, but a smaller
+`entries` attribute still makes for lighter cards and websocket traffic. Two
+settings keep it small:
 
 - `show_topn` — how many entries are exposed. Feeds added through the UI default
   to the newest **5**. YAML sensors are **not** capped: the sensor's state is the

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
 from .const import MAX_STATE_ATTRS_BYTES
-from .parser import attributes_size, state_attributes
+from .parser import attributes_size, recorded_attributes, state_attributes
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -58,16 +58,17 @@ def redact_url(url: str) -> str:
     )
 
 
-def attribute_size(coordinator: FeedparserCoordinator) -> int | None:
-    """Return the size of the state attributes the sensor would write."""
+def attribute_sizes(coordinator: FeedparserCoordinator) -> tuple[int, int] | None:
+    """Return the sizes of the state attributes and of the recorded part of them."""
     if coordinator.data is None:
         return None
-    return attributes_size(
-        state_attributes(
-            coordinator.config.feed_url,
-            coordinator.data.channel,
-            coordinator.data.entries,
-        ),
+    attributes = state_attributes(
+        coordinator.config.feed_url,
+        coordinator.data.channel,
+        coordinator.data.entries,
+    )
+    return attributes_size(attributes), attributes_size(
+        recorded_attributes(attributes),
     )
 
 
@@ -109,7 +110,8 @@ async def async_get_config_entry_diagnostics(
     config = dataclasses.asdict(coordinator.config)
     config["feed_url"] = redact_url(config["feed_url"])
     parsed = coordinator.data
-    size = attribute_size(coordinator)
+    sizes = attribute_sizes(coordinator)
+    size, recorded_size = sizes if sizes is not None else (None, None)
 
     return {
         "entry": entry_report,
@@ -134,9 +136,12 @@ async def async_get_config_entry_diagnostics(
                 sorted({key for e in parsed.entries for key in e}) if parsed else []
             ),
             "state_attributes_bytes": size,
+            "recorded_attributes_bytes": recorded_size,
             "recorder_limit_bytes": MAX_STATE_ATTRS_BYTES,
             "exceeds_recorder_limit": (
-                size > MAX_STATE_ATTRS_BYTES if size is not None else None
+                recorded_size > MAX_STATE_ATTRS_BYTES
+                if recorded_size is not None
+                else None
             ),
         },
     }
