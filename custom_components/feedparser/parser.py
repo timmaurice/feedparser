@@ -454,7 +454,7 @@ def generate_sensor_entry(  # noqa: C901, PLR0912
         ]
     # Before `remove_summary_image` and the truncation, so both work on the
     # markup the sensor actually exposes rather than on what the feed sent.
-    sensor_entry = sanitize_mapping(sensor_entry)
+    sensor_entry = sanitize_mapping(sensor_entry, config.feed_url)
     if config.remove_summary_image and "summary" in sensor_entry:
         sensor_entry["summary"] = re.sub(IMAGE_REGEX, "", sensor_entry["summary"])
     sensor_entry = _truncate_entry(sensor_entry, config)
@@ -486,7 +486,7 @@ def generate_channel_info(
             image_url = feed_info.logo
         if resolved := _resolve_url(image_url, config):
             channel_info["image"] = resolved
-    channel_info = sanitize_mapping(channel_info)
+    channel_info = sanitize_mapping(channel_info, config.feed_url)
     channel_info = _truncate_entry(channel_info, config)
     _LOGGER.debug("Feed %s: Generated channel info: %s", config.name, channel_info)
     return channel_info

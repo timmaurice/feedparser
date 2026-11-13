@@ -1020,3 +1020,33 @@ def test_scan_interval_from_minutes(
 ) -> None:
     """Test conversion of the UI scan interval into a timedelta."""
     assert scan_interval_from_minutes(value) == timedelta(minutes=expected_minutes)
+
+
+FEED_WITH_RELATIVE_SUMMARY_LINKS = """<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <title>Relative summary</title>
+  <item>
+    <title>Inner links</title>
+    <description><![CDATA[<p><a href="/inner/path">abs</a>
+      <a href="rel/page">rel</a> <a href="https://other.example/x">full</a>
+      <img src="/img/a.png"/> <a href="javascript:alert(1)">bad</a></p>]]></description>
+  </item>
+</channel></rss>
+"""
+
+
+def test_relative_links_in_the_summary_html_are_resolved() -> None:
+    """Test that `href` and `src` in the summary point at the feed's host."""
+    config = FeedParserConfig(
+        feed_url="https://ex.com/feeds/feed.xml",
+        name="relative",
+        date_format=DATE_FORMAT,
+        show_topn=1,
+        max_text_length=NO_TEXT_LIMIT,
+    )
+    summary = parse_feed(FEED_WITH_RELATIVE_SUMMARY_LINKS, config).entries[0]["summary"]
+    assert 'href="https://ex.com/inner/path"' in summary
+    assert 'href="https://ex.com/feeds/rel/page"' in summary
+    assert 'href="https://other.example/x"' in summary
+    assert 'src="https://ex.com/img/a.png"' in summary
+    assert "javascript:" not in summary

@@ -23,7 +23,7 @@ from typing import Any
 # allow-list is deliberate: this is the same allow-list the library applies to
 # HTML typed values, so a feed is sanitised identically in every dialect.
 from feedparser.sanitizer import _sanitize_html
-from feedparser.urls import make_safe_absolute_uri
+from feedparser.urls import make_safe_absolute_uri, resolve_relative_uris
 
 # Values under these keys are URLs, not markup. Running them through the HTML
 # sanitiser would escape the `&` of a query string; they are checked against
@@ -32,11 +32,20 @@ from feedparser.urls import make_safe_absolute_uri
 URL_KEYS = frozenset({"link", "image", "audio", "href", "url"})
 
 
-def sanitize_html(value: str) -> str:
-    """Return `value` with everything the allow-list rejects removed."""
+def sanitize_html(value: str, base_url: str | None = None) -> str:
+    """Return `value` with everything the allow-list rejects removed.
+
+    With `base_url`, a relative `href` or `src` in what is left is joined with
+    it. That runs after the allow-list, so only URLs it let through are
+    resolved, and a link in a summary points at the feed's host and not at
+    Home Assistant, like `link` and `links[].href` already do.
+    """
     if "<" not in value:
         return value
-    return _sanitize_html(value, "utf-8", "text/html")
+    cleaned = _sanitize_html(value, "utf-8", "text/html")
+    if base_url:
+        return resolve_relative_uris(cleaned, base_url, "utf-8", "text/html")
+    return cleaned
 
 
 def safe_url(value: str) -> str:
@@ -49,22 +58,32 @@ def safe_url(value: str) -> str:
     return make_safe_absolute_uri(value.strip())
 
 
-def sanitize_value(key: str, value: Any) -> Any:  # noqa: ANN401
+def sanitize_value(
+    key: str,
+    value: Any,  # noqa: ANN401
+    base_url: str | None = None,
+) -> Any:  # noqa: ANN401
     """Sanitise one value of an entry, recursing into lists and dicts.
 
     Nested values carry their own key - the `href` of a link, the `url` of a
     media item - so the URL rule applies at every depth.
     """
     if isinstance(value, str):
-        return safe_url(value) if key in URL_KEYS else sanitize_html(value)
+        return safe_url(value) if key in URL_KEYS else sanitize_html(value, base_url)
     if isinstance(value, list):
-        return [sanitize_value(key, item) for item in value]
+        return [sanitize_value(key, item, base_url) for item in value]
     if isinstance(value, dict):
-        return {nested: sanitize_value(nested, item) for nested, item in value.items()}
+        return {
+            nested: sanitize_value(nested, item, base_url)
+            for nested, item in value.items()
+        }
     return value
 
 
-def sanitize_mapping(values: dict[str, Any]) -> dict[str, Any]:
+def sanitize_mapping(
+    values: dict[str, Any],
+    base_url: str | None = None,
+) -> dict[str, Any]:
     """Return a copy of an entry or channel with every value sanitised.
 
     A top level URL the allow-list rejects drops out entirely rather than
@@ -73,7 +92,7 @@ def sanitize_mapping(values: dict[str, Any]) -> dict[str, Any]:
     """
     sanitized: dict[str, Any] = {}
     for key, value in values.items():
-        cleaned = sanitize_value(key, value)
+        cleaned = sanitize_value(key, value, base_url)
         if key in URL_KEYS and isinstance(value, str) and value and not cleaned:
             continue
         sanitized[key] = cleaned
