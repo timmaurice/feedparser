@@ -1,0 +1,71 @@
+name: Canary
+
+# The unit tests run on the feeds as they were recorded (tests/data), so they
+# stay green when a publisher changes its feed - an image that stops arriving, a
+# renamed title, a feed that moved and now answers with an HTML page. This job
+# reads the live feeds with the same sensor configuration once a week and fails
+# when the parser finds nothing or a field the recording always had is gone.
+# See scripts/canary.py; when it fails because a format moved, fix the parser
+# and run scripts/refresh_fixtures.py.
+
+on:
+  schedule:
+    - cron: '23 6 * * 1' # Mondays, off the hour
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    name: Live feed canary
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          # Same interpreter as the tests: the parser is imported from the
+          # integration, and with it Home Assistant.
+          python-version: '3.14'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev]
+
+      - name: Run the parser against the live feeds
+        run: |
+          set +e
+          python scripts/canary.py 2>&1 | tee canary_output.txt
+          code=${PIPESTATUS[0]}
+          set -e
+
+          {
+            echo "### Live feed canary"
+            if [ "$code" -eq 0 ]; then
+              echo "> [!NOTE]"
+              echo "> The parser still reads every live feed."
+            elif [ "$code" -eq 1 ]; then
+              echo "> [!CAUTION]"
+              echo "> **A feed's format has most likely changed.** Fix the parser, then run \`python scripts/refresh_fixtures.py <name>\`."
+            else
+              echo "> [!WARNING]"
+              echo "> A feed could not be fetched, so nothing is known about its format."
+            fi
+            echo ""
+            echo '```'
+            cat canary_output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$code"
