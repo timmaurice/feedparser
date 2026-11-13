@@ -110,6 +110,19 @@ be parsed.
 
 Note that the original `pubDate` field is available under `published` attribute for the given feed entry. Other date-type values that can be available are `updated`, `created` and `expired`. Please refer to [the documentation of the original feedparser](https://feedparser.readthedocs.io/en/latest/date-parsing.html) library.
 
+Each of these dates is exposed twice, in the entries and in `channel` alike:
+
+| attribute                       | example                     | meant for |
+| :------------------------------ | :-------------------------- | :-------- |
+| `published`, `updated`, …       | `Tue, Jan 13 2026 03:36 PM` | display - formatted with `date_format`, in UTC or, with `local_time`, in Home Assistant's time zone |
+| `published_iso`, `updated_iso`, … | `2026-01-13T15:36:00+00:00` | cards, templates and automations - ISO 8601 with the UTC offset, whatever `date_format` says |
+
+The formatted value only carries what `date_format` asks for, and the default
+has no time zone in it, so parse the `_iso` value rather than the formatted one
+when you sort, compare or compute an age. It follows its date through
+`inclusions` (including `published` gets you `published_iso` too) and can be
+dropped on its own by naming it, e.g. `published_iso`, in `exclusions`.
+
 **Configuration variables:**
 
 | key                          | description                                                            |
@@ -227,6 +240,10 @@ that limit:
   again, so a truncated summary is never a half written tag. Set it to `0` to
   switch the shortening off and keep the full article text — sensible for a
   short feed with narrow `inclusions`.
+
+ISO dates (`published_iso` and the like) are never shortened; each costs about
+45 bytes per entry. A feed right at the limit whose consumers only show the
+formatted date can drop them with `exclusions`.
 
 If the attributes are too large anyway, the integration logs a warning naming
 the size and the limit, so the reason for an empty history is visible in the log.

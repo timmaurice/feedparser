@@ -44,10 +44,18 @@ DEFAULT_MAX_TEXT_LENGTH = 250
 NO_TEXT_LIMIT = 0
 TRUNCATION_SUFFIX = "..."
 
-# Values under these keys are URLs or identifiers - enclosure URLs in particular
-# get long, and a truncated one is a broken one.
+DATE_KEYS = ("published", "updated", "created", "expired")
+# Every date is exposed twice: under its own key, formatted with the user's
+# `date_format` for display, and under that key plus this suffix as ISO 8601
+# with its UTC offset. The formatted one carries whatever the format asks for -
+# the default has no zone at all - so the ISO one is what a card parses.
+ISO_DATE_SUFFIX = "_iso"
+
+# Values under these keys are URLs, identifiers or machine-readable dates -
+# enclosure URLs in particular get long, and a truncated one is a broken one.
 UNTRUNCATED_KEYS = frozenset(
-    {"link", "image", "audio", "href", "url", "id", "guid"},
+    {"link", "image", "audio", "href", "url", "id", "guid"}
+    | {f"{key}{ISO_DATE_SUFFIX}" for key in DATE_KEYS},
 )
 
 # UI configured entries store the scan interval as a plain number of minutes.
