@@ -21,8 +21,10 @@ from feedparser import FeedParserDict
 from homeassistant.util import dt
 
 from .const import (
+    DATE_KEYS,
     DEFAULT_MAX_TEXT_LENGTH,
     IMAGE_REGEX,
+    ISO_DATE_SUFFIX,
     MAX_STATE_ATTRS_BYTES,
     NO_TEXT_LIMIT,
     TRUNCATION_SUFFIX,
@@ -31,8 +33,6 @@ from .const import (
 from .sanitize import safe_url, sanitize_mapping
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
-
-DATE_KEYS = ("published", "updated", "created", "expired")
 
 # Feed key -> the (show_topn, max_text_length) the oversize warning was last
 # logged for, so a polled feed does not repeat the same line forever.
@@ -375,10 +375,7 @@ def generate_sensor_entry(  # noqa: C901
         if _is_filtered(key, config):
             continue
         if key in DATE_KEYS:
-            parsed_date = parse_date(value, config)
-            if parsed_date is None:
-                continue
-            sensor_entry[key] = parsed_date.strftime(config.date_format)
+            _add_date(sensor_entry, key, value, config)
         elif key == "image":
             if resolved := _resolve_url(value.get("href"), config):
                 sensor_entry["image"] = resolved
@@ -428,10 +425,7 @@ def generate_channel_info(
         if _is_filtered(key, config) or key == "image":
             continue
         if key in DATE_KEYS:
-            parsed_channel_date = parse_date(value, config)
-            if parsed_channel_date is None:
-                continue
-            channel_info[key] = parsed_channel_date.strftime(config.date_format)
+            _add_date(channel_info, key, value, config)
         elif isinstance(value, dict | list | str | int | float | bool):
             channel_info[key] = value
 
@@ -448,6 +442,30 @@ def generate_channel_info(
     channel_info = _truncate_entry(channel_info, config)
     _LOGGER.debug("Feed %s: Generated channel info: %s", config.name, channel_info)
     return channel_info
+
+
+def _add_date(
+    target: dict[str, Any],
+    key: str,
+    value: object,
+    config: FeedParserConfig,
+) -> None:
+    """Add a feed date under `key`, formatted, and under `key_iso` as ISO 8601.
+
+    The formatted value is for people and follows `date_format`, which may
+    leave out the zone - the default does - or anything else a parser would
+    need. Reading it back loses the offset, so a consumer that sorts or counts
+    with the date gets the ISO companion as well. It follows the source key
+    through `inclusions`, so narrowing an entry to `published` keeps a date a
+    card can use; naming the companion in `exclusions` drops it on its own.
+    """
+    parsed_date = parse_date(value, config)
+    if parsed_date is None:
+        return
+    target[key] = parsed_date.strftime(config.date_format)
+    iso_key = f"{key}{ISO_DATE_SUFFIX}"
+    if iso_key not in config.exclusions:
+        target[iso_key] = parsed_date.isoformat(timespec="seconds")
 
 
 def _is_filtered(key: str, config: FeedParserConfig) -> bool:

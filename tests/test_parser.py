@@ -5,16 +5,19 @@ from __future__ import annotations
 import logging
 import re
 from contextlib import nullcontext, suppress
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
+from zoneinfo import ZoneInfo
 
 import feedparser
 import pytest
 from conftest import local_feed_config, parse_local_feed
 from constants import DATE_FORMAT
+from homeassistant.util import dt as dt_util
 
 from custom_components.feedparser.const import (
+    DEFAULT_DATE_FORMAT,
     DEFAULT_MAX_TEXT_LENGTH,
     DEFAULT_SCAN_INTERVAL_MINUTES,
     DEFAULT_TOPN,
@@ -37,6 +40,7 @@ from custom_components.feedparser.parser import (
 
 if TYPE_CHECKING:
     import time
+    from collections.abc import Iterator
 
     from feedsource import FeedSource
 
@@ -279,6 +283,116 @@ def test_a_date_that_is_not_text_is_dropped(value: object) -> None:
     assert parse_date(value, zeit_verbrechen_config()) is None
 
 
+# Published at 21:06 in India, which is 15:36 UTC and 16:36 in Berlin.
+FEED_WITH_A_NON_UTC_DATE = """<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <title>Offsets</title>
+  <lastBuildDate>Tue, 13 Jan 2026 22:00:00 +0530</lastBuildDate>
+  <item><title>From Mumbai</title>
+    <pubDate>Tue, 13 Jan 2026 21:06:00 +0530</pubDate></item>
+</channel></rss>
+"""
+PUBLISHED_IN_INDIA = datetime(
+    2026,
+    1,
+    13,
+    21,
+    6,
+    tzinfo=timezone(timedelta(hours=5, minutes=30)),
+)
+
+
+@pytest.fixture()
+def _berlin_time_zone() -> Iterator[None]:
+    """Run a test as a Home Assistant whose time zone is Europe/Berlin."""
+    original = dt_util.get_default_time_zone()
+    dt_util.set_default_time_zone(ZoneInfo("Europe/Berlin"))
+    try:
+        yield
+    finally:
+        dt_util.set_default_time_zone(original)
+
+
+def test_a_date_also_comes_as_iso_8601_with_its_offset() -> None:
+    """Test that a consumer gets the instant, not just a display string.
+
+    The default `date_format` has no zone, so a card that parsed `published`
+    read 15:36 UTC as 15:36 in the browser's own zone - off by its UTC offset,
+    in the relative age and in the sort order alike.
+    """
+    parsed = parse_feed(
+        FEED_WITH_A_NON_UTC_DATE,
+        zeit_verbrechen_config(date_format=DEFAULT_DATE_FORMAT),
+    )
+    entry = parsed.entries[0]
+    # The display value is exactly what it was.
+    assert entry["published"] == "Tue, Jan 13 2026 03:36 PM"
+    assert entry["published_iso"] == "2026-01-13T15:36:00+00:00"
+    assert datetime.fromisoformat(entry["published_iso"]) == PUBLISHED_IN_INDIA
+    # The channel's dates are read the same way, by the same card.
+    assert parsed.channel["updated_iso"] == "2026-01-13T16:30:00+00:00"
+
+
+@pytest.mark.usefixtures("_berlin_time_zone")
+def test_the_iso_date_carries_the_local_offset_with_local_time() -> None:
+    """Test that `local_time` moves the offset, never the instant."""
+    entry = parse_feed(
+        FEED_WITH_A_NON_UTC_DATE,
+        zeit_verbrechen_config(date_format=DEFAULT_DATE_FORMAT, local_time=True),
+    ).entries[0]
+    assert entry["published"] == "Tue, Jan 13 2026 04:36 PM"
+    assert entry["published_iso"] == "2026-01-13T16:36:00+01:00"
+    assert datetime.fromisoformat(entry["published_iso"]) == PUBLISHED_IN_INDIA
+
+
+@pytest.mark.parametrize("date_format", ["%d.%m.%Y", "%H:%M", "%B %Y, week %W"])
+def test_a_custom_date_format_leaves_the_iso_date_alone(date_format: str) -> None:
+    """Test that whatever a user formats the date as, the instant survives.
+
+    A format without a time, or without a day, is a perfectly good thing to
+    show - and nothing any parser can turn back into a point in time.
+    """
+    entry = parse_feed(
+        FEED_WITH_A_NON_UTC_DATE,
+        zeit_verbrechen_config(date_format=date_format),
+    ).entries[0]
+    assert entry["published"] == PUBLISHED_IN_INDIA.astimezone(UTC).strftime(
+        date_format,
+    )
+    assert datetime.fromisoformat(entry["published_iso"]) == PUBLISHED_IN_INDIA
+
+
+def test_the_iso_date_is_never_truncated() -> None:
+    """Test that a short `max_text_length` cannot cut the ISO date apart."""
+    entry = parse_feed(
+        FEED_WITH_A_NON_UTC_DATE,
+        zeit_verbrechen_config(max_text_length=5),
+    ).entries[0]
+    assert datetime.fromisoformat(entry["published_iso"]) == PUBLISHED_IN_INDIA
+
+
+def test_the_iso_date_can_be_excluded_on_its_own() -> None:
+    """Test that `exclusions` can drop the companion and keep the date."""
+    parsed = parse_feed(
+        FEED_WITH_A_NON_UTC_DATE,
+        zeit_verbrechen_config(exclusions=["published_iso", "updated_iso"]),
+    )
+    assert "published" in parsed.entries[0]
+    assert "published_iso" not in parsed.entries[0]
+    assert "updated" in parsed.channel
+    assert "updated_iso" not in parsed.channel
+
+
+def test_an_unparsable_date_has_no_iso_date_either() -> None:
+    """Test that a dropped date does not leave its companion behind."""
+    broken, fine = parse_feed(
+        FEED_WITH_A_BROKEN_DATE,
+        zeit_verbrechen_config(),
+    ).entries
+    assert "published_iso" not in broken
+    assert fine["published_iso"] == "2026-01-13T21:06:00+00:00"
+
+
 def test_an_entry_with_nothing_left_in_it_is_not_exposed() -> None:
     """Test that a card never gets a keyless entry, and the state agrees.
 
@@ -290,7 +404,8 @@ def test_an_entry_with_nothing_left_in_it_is_not_exposed() -> None:
         FEED_WITH_A_BROKEN_DATE,
         zeit_verbrechen_config(inclusions=["published"]),
     )
-    assert parsed.entries == [{"published": parsed.entries[0]["published"]}]
+    # The ISO companion follows the date it belongs to through `inclusions`.
+    assert set(parsed.entries[0]) == {"published", "published_iso"}
     assert parsed.native_value == len(parsed.entries) == 1
 
 
@@ -312,7 +427,7 @@ def test_inclusions_also_narrow_down_the_derived_keys() -> None:
     )
     assert parsed.entries
     for entry in parsed.entries:
-        assert set(entry) == {"title", "published"}
+        assert set(entry) == {"title", "published", "published_iso"}
 
 
 def test_a_derived_key_that_is_included_is_still_added() -> None:
