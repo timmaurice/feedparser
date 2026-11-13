@@ -113,6 +113,11 @@ def test_diagnostics_report_the_last_poll() -> None:
     assert report["parser_config"]["show_topn"] == SHOWN_ENTRIES
     assert report["feed"]["recorder_limit_bytes"] == MAX_STATE_ATTRS_BYTES
     assert report["feed"]["state_attributes_bytes"] > 0
+    assert report["feed"]["recorded_attributes_bytes"] > 0
+    assert (
+        report["feed"]["recorded_attributes_bytes"]
+        < report["feed"]["state_attributes_bytes"]
+    )
     assert report["feed"]["exceeds_recorder_limit"] in (True, False)
 
 

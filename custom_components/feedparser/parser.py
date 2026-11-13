@@ -28,6 +28,7 @@ from .const import (
     MAX_STATE_ATTRS_BYTES,
     NO_TEXT_LIMIT,
     TRUNCATION_SUFFIX,
+    UNRECORDED_ATTRIBUTES,
     UNTRUNCATED_KEYS,
 )
 from .sanitize import safe_url, sanitize_mapping
@@ -315,8 +316,17 @@ def state_attributes(
 
 
 def attributes_size(attributes: dict[str, Any]) -> int:
-    """Return the number of bytes the recorder would have to store."""
+    """Return the number of bytes of the given attributes as JSON."""
     return len(json.dumps(attributes, default=str).encode())
+
+
+def recorded_attributes(attributes: dict[str, Any]) -> dict[str, Any]:
+    """Return the attributes the recorder stores, without the unrecorded ones."""
+    return {
+        key: value
+        for key, value in attributes.items()
+        if key not in UNRECORDED_ATTRIBUTES
+    }
 
 
 def _warn_if_oversized(
@@ -324,19 +334,22 @@ def _warn_if_oversized(
     entries: list[dict[str, Any]],
     config: FeedParserConfig,
 ) -> None:
-    """Warn when the state attributes are too large for the recorder.
+    """Warn when the recorded attributes are too large for the recorder.
 
-    Nothing breaks visibly when they are - the state still shows up in the UI,
-    the recorder simply drops its attributes - so without this a user who
-    raised show_topn on a verbose feed has no way of learning why the history
-    of that sensor is empty.
+    Only the attributes the recorder stores count: `entries` and `channel` are
+    unrecorded, so a verbose feed no longer costs the history its attributes.
+    What is left is `feed_url`, which only a pathological URL can push past the
+    limit. Nothing breaks visibly when it does - the state still shows up in the
+    UI, the recorder simply drops its attributes.
 
     The feed is polled on a timer, so warning on every poll would repeat the
     same line for as long as the feed is configured. It is logged once per
     configuration instead, and again once the settings it names have changed
     or the attributes fit and grow past the limit anew.
     """
-    size = attributes_size(state_attributes(config.feed_url, channel, entries))
+    size = attributes_size(
+        recorded_attributes(state_attributes(config.feed_url, channel, entries)),
+    )
     feed_key = config.feed_url or config.name
     settings = (config.show_topn, config.max_text_length)
     if size > MAX_STATE_ATTRS_BYTES:
@@ -345,10 +358,12 @@ def _warn_if_oversized(
         _OVERSIZED_WARNED[feed_key] = settings
         _LOGGER.warning(
             (
-                "Feed %s: the state attributes are %s bytes, which is more than "
-                "the %s bytes Home Assistant's recorder stores - the history of "
-                "this sensor will have no attributes. Lower show_topn (now %s) "
-                "or max_text_length (now %s), or narrow down inclusions."
+                "Feed %s: the recorded state attributes are %s bytes, which is "
+                "more than the %s bytes Home Assistant's recorder stores - the "
+                "history of this sensor will have no attributes. The entries and "
+                "channel are not recorded, so this comes from the feed URL, which "
+                "is far longer than a URL normally is (show_topn is %s, "
+                "max_text_length %s and do not affect it)."
             ),
             config.name,
             size,

@@ -22,6 +22,12 @@ DEFAULT_SCAN_INTERVAL = timedelta(hours=1)
 # (homeassistant.components.recorder.db_schema.MAX_STATE_ATTRS_BYTES).
 MAX_STATE_ATTRS_BYTES = 16384
 
+# The sensor attributes the recorder does not store. The recorder's size limit
+# applies to what is left after these are taken out, which is why the oversize
+# warning and diagnostics measure that and not the whole state. The state
+# machine itself has no such limit, so these still reach the live state.
+UNRECORDED_ATTRIBUTES = frozenset({"entries", "channel"})
+
 # Everything the sensor exposes ends up in those attributes, so keep the default
 # small - an unbounded default made the recorder reject the state on every poll.
 # Users who want more entries can still raise show_topn.
