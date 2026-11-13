@@ -32,6 +32,7 @@ from custom_components.feedparser.const import (
 )
 from custom_components.feedparser.parser import (
     _OVERSIZED_WARNED,
+    _WARNED,
     FeedParserConfig,
     ParsedFeed,
     parse_date,
@@ -49,6 +50,7 @@ if TYPE_CHECKING:
 def _forget_oversize_warnings() -> None:
     """Let every test start out as a feed that has not warned yet."""
     _OVERSIZED_WARNED.clear()
+    _WARNED.clear()
 
 
 def test_simple(parsed_feed: ParsedFeed) -> None:
@@ -278,6 +280,45 @@ def test_an_unparsable_date_is_left_out(
     assert broken["title"] == "No usable date"
     assert "published" in fine
     assert UNPARSABLE_DATE in caplog.text
+
+
+def test_a_repeated_date_problem_is_only_warned_about_once(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that a feed with an unreadable date does not warn on every poll."""
+    caplog.set_level(logging.DEBUG)
+    for _ in range(3):
+        parse_feed(FEED_WITH_A_BROKEN_DATE, zeit_verbrechen_config())
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
+    assert UNPARSABLE_DATE in warnings[0].getMessage()
+    polls = 3
+    assert caplog.text.count(f"Unable to parse date '{UNPARSABLE_DATE}'") == polls
+
+
+EMPTY_FEED = """<?xml version="1.0"?>
+<rss version="2.0"><channel><title>empty</title></channel></rss>"""
+
+
+def test_no_entries_is_only_warned_about_once_until_entries_return(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that an empty feed warns once, and again after it had entries."""
+    caplog.set_level(logging.DEBUG)
+
+    def warnings() -> list[logging.LogRecord]:
+        return [
+            r
+            for r in caplog.records
+            if r.levelno == logging.WARNING and "No entries found" in r.getMessage()
+        ]
+
+    for _ in range(3):
+        parse_feed(EMPTY_FEED, zeit_verbrechen_config())
+    assert len(warnings()) == 1
+    parse_feed(FEED_WITH_A_BROKEN_DATE, zeit_verbrechen_config())
+    parse_feed(EMPTY_FEED, zeit_verbrechen_config())
+    assert len(warnings()) == 2  # noqa: PLR2004
 
 
 FEED_WITH_A_HUGE_OFFSET = """<?xml version="1.0"?>

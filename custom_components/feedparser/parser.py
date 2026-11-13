@@ -38,6 +38,11 @@ _LOGGER: logging.Logger = logging.getLogger(__name__)
 # logged for, so a polled feed does not repeat the same line forever.
 _OVERSIZED_WARNED: dict[str, tuple[int, int]] = {}
 
+# (feed key, kind) pairs that have already been logged as a warning. A feed
+# without entries or with a date nobody can read does so on every poll, so the
+# first occurrence is a warning and the repeats drop to debug.
+_WARNED: set[tuple[str, str]] = set()
+
 # A tag, or - at the very end of a value - the start of one that never closes.
 TAG_REGEX = re.compile(r"<[^>]*(?:>|$)")
 ENTITY_REGEX = re.compile(r"&(?:#\d+|#[xX][0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);")
@@ -88,6 +93,16 @@ class ParsedFeed:
     native_value: int | None = None
 
 
+def _warn_once(config: FeedParserConfig, kind: str, msg: str, *args: object) -> None:
+    """Log `msg` as a warning the first time per feed and kind, then as debug."""
+    key = (config.feed_url or config.name, kind)
+    if key in _WARNED:
+        _LOGGER.debug(msg, *args)
+        return
+    _WARNED.add(key)
+    _LOGGER.warning(msg, *args)
+
+
 def parse_feed(content: bytes | str, config: FeedParserConfig) -> ParsedFeed:
     """Parse raw feed content into channel info and entries."""
     parsed_feed: FeedParserDict = feedparser.parse(content)
@@ -99,9 +114,11 @@ def parse_feed(content: bytes | str, config: FeedParserConfig) -> ParsedFeed:
     channel = generate_channel_info(parsed_feed.feed, config)
 
     if not parsed_feed.entries:
-        _LOGGER.warning("Feed %s: No entries found.", config.name)
+        _warn_once(config, "no-entries", "Feed %s: No entries found.", config.name)
         return ParsedFeed(channel=channel, native_value=0)
 
+    # Entries are back, so the next empty poll is news again.
+    _WARNED.discard((config.feed_url or config.name, "no-entries"))
     _LOGGER.debug("Feed %s: Feed data fetched successfully", config.name)
     # The sensor value is the number of entries, capped at show_topn. A negative
     # cap would slice from the end of the list (`entries[:-5]` keeps all but the
@@ -508,7 +525,9 @@ def parse_date(date: object, config: FeedParserConfig) -> datetime | None:
     to take the whole poll down with an AttributeError out of dateutil.
     """
     if not isinstance(date, str):
-        _LOGGER.warning(
+        _warn_once(
+            config,
+            "date",
             "Feed %s: The date %r is not text and cannot be parsed. "
             "The entry is kept without it.",
             config.name,
@@ -530,7 +549,9 @@ def parse_date(date: object, config: FeedParserConfig) -> datetime | None:
         try:
             parsed_time = dateutil_parser.parse(date)
         except (dateutil_parser.ParserError, TypeError, OverflowError) as e:
-            _LOGGER.warning(
+            _warn_once(
+                config,
+                "date",
                 "Feed %s: Unable to parse date '%s' with dateutil: %s. "
                 "The entry is kept without it.",
                 config.name,
@@ -556,7 +577,9 @@ def parse_date(date: object, config: FeedParserConfig) -> datetime | None:
                 tzinfo=timezone(parsed_time.utcoffset()),  # type: ignore[arg-type]
             )
         except ValueError as e:
-            _LOGGER.warning(
+            _warn_once(
+                config,
+                "date",
                 "Feed %s: The date '%s' has a timezone offset of a day or "
                 "more: %s. The entry is kept without it.",
                 config.name,
