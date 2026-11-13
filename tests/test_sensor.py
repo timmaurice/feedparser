@@ -109,6 +109,19 @@ def test_attributes_stay_below_recorder_limit(feed: FeedSource) -> None:
     ), f"{feed.name}: attributes are {size} bytes, the recorder would drop them"
 
 
+def test_entries_and_channel_stay_out_of_the_recorder(feed: FeedSource) -> None:
+    """Test that the large attributes are not written to the history.
+
+    They still reach the state; only the recorder skips them. `feed_url` is small
+    and identifies the feed, so it stays recorded.
+    """
+    parsed = parse_local_feed(feed, show_topn=DEFAULT_TOPN)
+    sensor = build_sensor(parsed, feed.name)
+    assert {"entries", "channel"} <= sensor._unrecorded_attributes  # noqa: SLF001
+    assert "feed_url" not in sensor._unrecorded_attributes  # noqa: SLF001
+    assert {"entries", "channel", "feed_url"} <= set(sensor.extra_state_attributes)
+
+
 def test_yaml_without_show_topn_keeps_every_entry() -> None:
     """Test that a YAML sensor is not silently capped by the new default.
 
