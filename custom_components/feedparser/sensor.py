@@ -180,6 +180,11 @@ class FeedParserSensor(CoordinatorEntity[FeedparserCoordinator], SensorEntity):
     # `strings.json` has nothing to carry for it.
     _attr_translation_key = "feed"
     _attr_attribution = "Data retrieved using RSS feedparser"
+    # `entries` and `channel` are the bulk of the attributes (up to the
+    # recorder's size limit) and are rewritten whenever the feed changes. A card
+    # reads them from the live state, so a copy per change in the history only
+    # grows the database. `feed_url` stays recorded.
+    _unrecorded_attributes = frozenset({"entries", "channel"})
 
     def __init__(
         self: FeedParserSensor,
