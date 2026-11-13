@@ -34,3 +34,12 @@ updates:
       # pin would fight core at runtime. Take majors only once core allows them.
       - dependency-name: "python-dateutil"
         update-types: ["version-update:semver-major"]
+
+  # The Home Assistant test image is pinned to a release in docker-compose.yml; this
+  # bumps the pin so the tests keep running against a current Home Assistant.
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7

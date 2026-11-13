@@ -2,7 +2,7 @@ name: feedparser-test
 services:
   homeassistant:
     container_name: ha-feedparser-test
-    image: homeassistant/home-assistant:stable
+    image: homeassistant/home-assistant:2026.11.1
     volumes:
       - ./config:/config
       # Mount the custom component directly into the container
