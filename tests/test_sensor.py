@@ -250,3 +250,32 @@ def test_a_yaml_sensor_keeps_its_configured_name(feed: FeedSource) -> None:
     sensor = on_a_platform(build_sensor(parsed, feed.name))
     assert sensor.name == feed.name
     assert written_attributes(sensor)["friendly_name"] == feed.name
+
+
+def test_a_failed_poll_keeps_the_last_feed_and_marks_it_stale(
+    feed: FeedSource,
+) -> None:
+    """Test that an outage does not blank the feed a card is showing.
+
+    An unavailable state carries no attributes, so the sensor stays available
+    for as long as the coordinator holds data and says so with `stale`.
+    """
+    parsed = parse_local_feed(feed, show_topn=DEFAULT_TOPN)
+    sensor = build_sensor(parsed, feed.name)
+    sensor.coordinator.last_update_success = True
+    assert sensor.available
+    assert "stale" not in sensor.extra_state_attributes
+
+    sensor.coordinator.last_update_success = False
+    assert sensor.available
+    attributes = sensor.extra_state_attributes
+    assert attributes["stale"] is True
+    assert attributes["entries"] == parsed.entries
+
+
+def test_a_feed_that_never_loaded_is_unavailable(feed: FeedSource) -> None:
+    """Test that without any earlier data a failed poll is still unavailable."""
+    sensor = build_sensor(parse_local_feed(feed, show_topn=DEFAULT_TOPN), feed.name)
+    sensor.coordinator.data = None  # type: ignore[assignment]
+    sensor.coordinator.last_update_success = False
+    assert not sensor.available

@@ -245,6 +245,21 @@ class FeedParserSensor(CoordinatorEntity[FeedparserCoordinator], SensorEntity):
         return self.coordinator.config.feed_url
 
     @property
+    def available(self: FeedParserSensor) -> bool:
+        """Stay available while a failed poll still has earlier data to show.
+
+        CoordinatorEntity goes unavailable on any failed update, and an
+        unavailable state carries no attributes, so a card lost the whole feed
+        whenever the server hiccuped. The last good feed is kept instead and
+        flagged with the `stale` attribute until a poll succeeds again. Only an
+        entity that has never had data is unavailable.
+        """
+        return self.coordinator.data is not None
+
+    @property
     def extra_state_attributes(self: FeedParserSensor) -> dict[str, Any]:
         """Return entity specific state attributes."""
-        return state_attributes(self.feed_url, self.channel, self.feed_entries)
+        attributes = state_attributes(self.feed_url, self.channel, self.feed_entries)
+        if not self.coordinator.last_update_success:
+            attributes["stale"] = True
+        return attributes
