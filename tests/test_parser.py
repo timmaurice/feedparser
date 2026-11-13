@@ -217,6 +217,37 @@ def test_a_single_quoted_image_is_found_and_removed() -> None:
     assert "Text." in entry["summary"]
 
 
+FEED_WITH_RELATIVE_LINKS = """<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Relative</title>
+  <entry>
+    <title>Has links</title>
+    <link rel="alternate" href="/posts/1"/>
+    <link rel="enclosure" href="files/a.mp3"/>
+    <link rel="related" href="https://other.example/x"/>
+  </entry>
+</feed>
+"""
+
+
+def test_relative_link_hrefs_are_resolved_against_the_feed() -> None:
+    """Test that `links[].href` is joined with the feed URL like `link` is."""
+    config = FeedParserConfig(
+        feed_url="https://ex.com/feeds/feed.xml",
+        name="relative",
+        date_format=DATE_FORMAT,
+        show_topn=1,
+        max_text_length=NO_TEXT_LIMIT,
+    )
+    entry = parse_feed(FEED_WITH_RELATIVE_LINKS, config).entries[0]
+    assert entry["link"] == "https://ex.com/posts/1"
+    assert [item["href"] for item in entry["links"]] == [
+        "https://ex.com/posts/1",
+        "https://ex.com/feeds/files/a.mp3",
+        "https://other.example/x",
+    ]
+
+
 UNPARSABLE_DATE = "not a date at all"
 FEED_WITH_A_BROKEN_DATE = f"""<?xml version="1.0"?>
 <rss version="2.0"><channel>
