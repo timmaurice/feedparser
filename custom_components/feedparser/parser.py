@@ -104,9 +104,21 @@ def _warn_once(config: FeedParserConfig, kind: str, msg: str, *args: object) -> 
     _LOGGER.warning(msg, *args)
 
 
+class NotAFeedError(Exception):
+    """Raised when a response has no entries and is not a well-formed feed."""
+
+
 def parse_feed(content: bytes | str, config: FeedParserConfig) -> ParsedFeed:
     """Parse raw feed content into channel info and entries."""
     parsed_feed: FeedParserDict = feedparser.parse(content)
+
+    # A challenge page, a captive portal or an empty body comes with a 200 too.
+    # Shown as an empty feed it wiped the sensor; failing the poll keeps the last
+    # entries. A real empty feed has a version and parses cleanly, so it shows 0.
+    if not parsed_feed.entries and (not parsed_feed.get("version") or parsed_feed.bozo):
+        reason = parsed_feed.get("bozo_exception") or "no feed version"
+        msg = f"Feed {config.name}: the response is not a feed ({reason})"
+        raise NotAFeedError(msg)
 
     if not parsed_feed.feed:
         _LOGGER.warning("Feed %s: No data received.", config.name)

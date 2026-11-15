@@ -34,6 +34,7 @@ from custom_components.feedparser.parser import (
     _OVERSIZED_WARNED,
     _WARNED,
     FeedParserConfig,
+    NotAFeedError,
     ParsedFeed,
     attributes_size,
     parse_date,
@@ -989,19 +990,26 @@ def test_media_thumbnail_support() -> None:
     assert parsed.entries[0]["image"].startswith("https://")
 
 
-def test_parse_feed_without_data() -> None:
-    """Test that content which is not a feed yields no state."""
-    parsed = parse_feed(
+@pytest.mark.parametrize(
+    "content",
+    [
+        b"",
         b"not a feed at all",
-        FeedParserConfig(
-            feed_url="http://example.com/feed",
-            name="empty",
-            date_format=DATE_FORMAT,
-            show_topn=10,
-        ),
-    )
-    assert parsed.native_value is None
-    assert parsed.entries == []
+        b"<!doctype html><html><body>Just a moment</body></html>",
+    ],
+)
+def test_parse_feed_without_data(content: bytes) -> None:
+    """Test that content which is not a feed fails the poll instead of emptying it."""
+    with pytest.raises(NotAFeedError):
+        parse_feed(
+            content,
+            FeedParserConfig(
+                feed_url="http://example.com/feed",
+                name="empty",
+                date_format=DATE_FORMAT,
+                show_topn=10,
+            ),
+        )
 
 
 def test_parse_feed_without_entries() -> None:
