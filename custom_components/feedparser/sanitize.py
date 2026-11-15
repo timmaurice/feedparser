@@ -16,6 +16,7 @@ here, whatever the feed dialect and whatever the process-global
 
 from __future__ import annotations
 
+import html
 from typing import Any
 
 # feedparser's sanitiser is not part of its public API, which is why the
@@ -30,6 +31,23 @@ from feedparser.urls import make_safe_absolute_uri, resolve_relative_uris
 # feedparser's scheme allow-list instead, so a `javascript:` or `data:` URL
 # cannot reach the `href` or `src` a card builds from them.
 URL_KEYS = frozenset({"link", "image", "audio", "href", "url"})
+
+# Values under these keys - and everything nested in them, like the `value` of
+# a `content` item - are markup a card renders as HTML. Every other string is
+# plain text: `title`, `author` and the like are bound as text, so an entity
+# left in them shows up as a literal `&amp;`.
+HTML_KEYS = frozenset(
+    {
+        "summary",
+        "summary_detail",
+        "content",
+        "subtitle",
+        "subtitle_detail",
+        "description",
+    },
+)
+# More escaping levels than any feed nests; see `plain_text`.
+MAX_UNESCAPE_PASSES = 5
 
 
 def sanitize_html(value: str, base_url: str | None = None) -> str:
@@ -48,6 +66,25 @@ def sanitize_html(value: str, base_url: str | None = None) -> str:
     return cleaned
 
 
+def plain_text(value: str) -> str:
+    """Return `value` as plain text that the allow-list would leave untouched.
+
+    The sanitiser only runs on a value that contains `<` and then escapes its
+    `&`, so a title used to come out as text or as HTML depending on that one
+    character. Unescaping its result gives plain text either way. One unescape
+    can surface markup a feed escaped twice, so this repeats until the text no
+    longer changes: what is left passes the allow-list even if a consumer
+    renders it as HTML after all.
+    """
+    for _ in range(MAX_UNESCAPE_PASSES):
+        text = html.unescape(sanitize_html(value))
+        if text == value:
+            return text
+        value = text
+    # Still changing: hand over the escaped form rather than risk live markup.
+    return sanitize_html(value)
+
+
 def safe_url(value: str) -> str:
     """Return `value` if it is a URL a browser may be pointed at, else "".
 
@@ -62,19 +99,25 @@ def sanitize_value(
     key: str,
     value: Any,  # noqa: ANN401
     base_url: str | None = None,
+    *,
+    as_html: bool = False,
 ) -> Any:  # noqa: ANN401
     """Sanitise one value of an entry, recursing into lists and dicts.
 
     Nested values carry their own key - the `href` of a link, the `url` of a
-    media item - so the URL rule applies at every depth.
+    media item - so the URL rule applies at every depth. Whether a string is
+    markup or plain text is decided by the outermost key it sits under.
     """
+    as_html = as_html or key in HTML_KEYS
     if isinstance(value, str):
-        return safe_url(value) if key in URL_KEYS else sanitize_html(value, base_url)
+        if key in URL_KEYS:
+            return safe_url(value)
+        return sanitize_html(value, base_url) if as_html else plain_text(value)
     if isinstance(value, list):
-        return [sanitize_value(key, item, base_url) for item in value]
+        return [sanitize_value(key, item, base_url, as_html=as_html) for item in value]
     if isinstance(value, dict):
         return {
-            nested: sanitize_value(nested, item, base_url)
+            nested: sanitize_value(nested, item, base_url, as_html=as_html)
             for nested, item in value.items()
         }
     return value

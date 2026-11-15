@@ -29,6 +29,8 @@ from custom_components.feedparser.const import (  # noqa: E402
 )
 from custom_components.feedparser.parser import (  # noqa: E402
     FeedParserConfig,
+    NotAFeedError,
+    ParsedFeed,
     parse_feed,
 )
 
@@ -84,7 +86,11 @@ def config_for(feed: FeedSource, url: str | None = None) -> FeedParserConfig:
 def fingerprint(feed: FeedSource, content: bytes) -> Fingerprint:
     """Read `content` the way the sensor does and note what is in it."""
     raw = feedparser.parse(content)
-    sensor = parse_feed(content, config_for(feed))
+    try:
+        sensor = parse_feed(content, config_for(feed))
+    except NotAFeedError:
+        # Both callers report a response with no entries as "not a feed".
+        sensor = ParsedFeed()
     raw_counts = _counts(list(raw.entries))
     sensor_counts = _counts(list(sensor.entries))
     return Fingerprint(

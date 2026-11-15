@@ -34,6 +34,7 @@ from custom_components.feedparser.parser import (
     _OVERSIZED_WARNED,
     _WARNED,
     FeedParserConfig,
+    NotAFeedError,
     ParsedFeed,
     attributes_size,
     parse_date,
@@ -251,6 +252,64 @@ def test_relative_link_hrefs_are_resolved_against_the_feed() -> None:
         "https://ex.com/feeds/files/a.mp3",
         "https://other.example/x",
     ]
+
+
+FEED_WITH_A_RELATIVE_CHANNEL_LINK = """<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <title>Relative channel</title>
+  <link>/</link>
+  <item><title>Item</title><link>/a</link></item>
+</channel></rss>
+"""
+
+
+def test_the_channel_link_is_resolved_against_the_feed() -> None:
+    """Test that `channel.link` points at the publisher and not at Home Assistant.
+
+    rss-accordion turns it into the channel button, and a bare `/` there opened
+    the Home Assistant root.
+    """
+    config = FeedParserConfig(
+        feed_url="https://ex.com/feeds/feed.xml",
+        name="relative",
+        date_format=DATE_FORMAT,
+        show_topn=1,
+        max_text_length=NO_TEXT_LIMIT,
+    )
+    parsed = parse_feed(FEED_WITH_A_RELATIVE_CHANNEL_LINK, config)
+    assert parsed.channel["link"] == "https://ex.com/"
+    assert [item["href"] for item in parsed.channel["links"]] == ["https://ex.com/"]
+    assert parsed.entries[0]["link"] == "https://ex.com/a"
+
+
+FEED_WITH_LINKLESS_ITEMS = """<?xml version="1.0"?>
+<rss version="2.0"><channel><title>Linkless</title>
+  <item><title>Empty link</title><link></link></item>
+  <item><title>Enclosure only</title>
+    <enclosure url="https://ex.com/episode.mp3" type="audio/mpeg" length="1"/></item>
+  <item><title>Normal</title><link>https://ex.com/normal</link></item>
+</channel></rss>
+"""
+
+
+def test_an_item_without_a_usable_link_gets_none() -> None:
+    """Test that a link-less item neither fails the feed nor links to its audio.
+
+    feedparser builds a `links` item without `href` for `<link></link>`, and an
+    enclosure is a `links` item too, so taking `links[0]["href"]` raised a
+    KeyError for the whole feed or made the mp3 the item's link.
+    """
+    config = FeedParserConfig(
+        feed_url="https://ex.com/feed.xml",
+        name="linkless",
+        date_format=DATE_FORMAT,
+        show_topn=3,
+    )
+    empty, enclosure_only, normal = parse_feed(FEED_WITH_LINKLESS_ITEMS, config).entries
+    assert "link" not in empty
+    assert "link" not in enclosure_only
+    assert enclosure_only["audio"] == "https://ex.com/episode.mp3"
+    assert normal["link"] == "https://ex.com/normal"
 
 
 UNPARSABLE_DATE = "not a date at all"
@@ -959,19 +1018,26 @@ def test_media_thumbnail_support() -> None:
     assert parsed.entries[0]["image"].startswith("https://")
 
 
-def test_parse_feed_without_data() -> None:
-    """Test that content which is not a feed yields no state."""
-    parsed = parse_feed(
+@pytest.mark.parametrize(
+    "content",
+    [
+        b"",
         b"not a feed at all",
-        FeedParserConfig(
-            feed_url="http://example.com/feed",
-            name="empty",
-            date_format=DATE_FORMAT,
-            show_topn=10,
-        ),
-    )
-    assert parsed.native_value is None
-    assert parsed.entries == []
+        b"<!doctype html><html><body>Just a moment</body></html>",
+    ],
+)
+def test_parse_feed_without_data(content: bytes) -> None:
+    """Test that content which is not a feed fails the poll instead of emptying it."""
+    with pytest.raises(NotAFeedError):
+        parse_feed(
+            content,
+            FeedParserConfig(
+                feed_url="http://example.com/feed",
+                name="empty",
+                date_format=DATE_FORMAT,
+                show_topn=10,
+            ),
+        )
 
 
 def test_parse_feed_without_entries() -> None:

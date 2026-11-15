@@ -27,7 +27,7 @@ from .const import (
     as_field_list,
     scan_interval_from_minutes,
 )
-from .parser import FeedParserConfig, ParsedFeed, parse_feed
+from .parser import FeedParserConfig, NotAFeedError, ParsedFeed, parse_feed
 
 if TYPE_CHECKING:
     from datetime import timedelta
@@ -70,11 +70,14 @@ class FeedparserCoordinator(DataUpdateCoordinator[ParsedFeed]):
 
         # Parsing is pure CPU work and can be slow for large feeds, so keep it
         # off the event loop.
-        return await self.hass.async_add_executor_job(
-            parse_feed,
-            content,
-            self.config,
-        )
+        try:
+            return await self.hass.async_add_executor_job(
+                parse_feed,
+                content,
+                self.config,
+            )
+        except NotAFeedError as err:
+            raise UpdateFailed(str(err)) from err
 
 
 # A set up config entry carries its coordinator on `entry.runtime_data`. Home

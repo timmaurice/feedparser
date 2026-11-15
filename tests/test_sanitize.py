@@ -200,3 +200,54 @@ def test_a_url_the_allow_list_rejects_does_not_reach_the_card() -> None:
     assert "javascript:" not in rendered(entry)
     assert entry.get("link", "") == ""
     assert entry.get("image", "") == ""
+
+
+AMPERSAND_FEED = """<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <title>Q&amp;A: is 3 &lt; 5?</title>
+  <item>
+    <title>Q&amp;A: is 3 &lt; 5?</title>
+    <description>&lt;p&gt;Q&amp;amp;A: is 3 &amp;lt; 5?&lt;/p&gt;</description>
+  </item>
+  <item>
+    <title>Q&amp;A only</title>
+  </item>
+</channel></rss>
+"""
+
+
+def test_text_keys_are_plain_text_whatever_they_contain() -> None:
+    """Test that a title is never handed over HTML-escaped.
+
+    The card binds `title` as text, so an `&amp;` there is shown literally. It
+    used to be escaped only when the title also contained a `<`.
+    """
+    parsed = parse_feed(AMPERSAND_FEED, config())
+    assert parsed.channel["title"] == "Q&A: is 3 < 5?"
+    assert [entry["title"] for entry in parsed.entries] == [
+        "Q&A: is 3 < 5?",
+        "Q&A only",
+    ]
+    # The summary is rendered as HTML, so it stays escaped markup.
+    assert parsed.entries[0]["summary"] == "<p>Q&amp;A: is 3 &lt; 5?</p>"
+
+
+DOUBLE_ESCAPED_FEED = f"""<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <title>Twice</title>
+  <item>
+    <title>{ESCAPED_MARKUP.replace("&", "&amp;")}</title>
+  </item>
+</channel></rss>
+"""
+
+
+def test_unescaping_a_text_key_does_not_surface_markup() -> None:
+    """Test that a title escaped twice does not come out as a live script.
+
+    feedparser unescapes one level and the plain text rule another, so markup
+    escaped twice would otherwise reach a consumer that renders it as HTML.
+    """
+    entry = parse_feed(DOUBLE_ESCAPED_FEED, config()).entries[0]
+    assert_clean(entry["title"])
+    assert "Real text." in entry["title"]
