@@ -254,6 +254,34 @@ def test_relative_link_hrefs_are_resolved_against_the_feed() -> None:
     ]
 
 
+FEED_WITH_A_RELATIVE_CHANNEL_LINK = """<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <title>Relative channel</title>
+  <link>/</link>
+  <item><title>Item</title><link>/a</link></item>
+</channel></rss>
+"""
+
+
+def test_the_channel_link_is_resolved_against_the_feed() -> None:
+    """Test that `channel.link` points at the publisher and not at Home Assistant.
+
+    rss-accordion turns it into the channel button, and a bare `/` there opened
+    the Home Assistant root.
+    """
+    config = FeedParserConfig(
+        feed_url="https://ex.com/feeds/feed.xml",
+        name="relative",
+        date_format=DATE_FORMAT,
+        show_topn=1,
+        max_text_length=NO_TEXT_LIMIT,
+    )
+    parsed = parse_feed(FEED_WITH_A_RELATIVE_CHANNEL_LINK, config)
+    assert parsed.channel["link"] == "https://ex.com/"
+    assert [item["href"] for item in parsed.channel["links"]] == ["https://ex.com/"]
+    assert parsed.entries[0]["link"] == "https://ex.com/a"
+
+
 FEED_WITH_LINKLESS_ITEMS = """<?xml version="1.0"?>
 <rss version="2.0"><channel><title>Linkless</title>
   <item><title>Empty link</title><link></link></item>

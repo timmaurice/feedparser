@@ -405,10 +405,33 @@ def _resolve_url(url: str | None, config: FeedParserConfig) -> str:
     return urljoin(config.feed_url, safe)
 
 
+def _resolve_links(target: dict[str, Any], config: FeedParserConfig) -> None:
+    """Join `link` and `links[].href` in an entry or the channel with the feed URL.
+
+    feedparser hands relative ones over as written, and the card renders them
+    as an `href`, so `/` would open Home Assistant instead of the publisher. A
+    `link` the scheme allow-list rejects is dropped.
+    """
+    if isinstance(link := target.get("link"), str):
+        if resolved := _resolve_url(link, config):
+            target["link"] = resolved
+        else:
+            del target["link"]
+    if isinstance(links := target.get("links"), list):
+        target["links"] = [
+            (
+                {**item, "href": _resolve_url(item["href"], config)}
+                if isinstance(item, dict) and isinstance(item.get("href"), str)
+                else item
+            )
+            for item in links
+        ]
+
+
 # Flat dispatch over the keys a feed entry can carry: the branch count is the
 # shape of the data, not tangled control flow. Splitting it is worth doing on
 # its own, away from a QA round that must not move the parser's behaviour.
-def generate_sensor_entry(  # noqa: C901, PLR0912
+def generate_sensor_entry(  # noqa: C901
     feed_entry: FeedParserDict,
     config: FeedParserConfig,
 ) -> dict[str, Any]:
@@ -423,13 +446,10 @@ def generate_sensor_entry(  # noqa: C901, PLR0912
         elif key == "image":
             if resolved := _resolve_url(value.get("href"), config):
                 sensor_entry["image"] = resolved
-        elif key == "link" and isinstance(value, str):
-            # feedparser hands a relative `link` over as written, and the
-            # fallback below only runs when there is none.
-            if resolved := _resolve_url(value, config):
-                sensor_entry["link"] = resolved
         elif isinstance(value, dict | list | str | int | float | bool):
             sensor_entry[key] = value
+    # Before the fallback below, which only runs when there is no usable `link`.
+    _resolve_links(sensor_entry, config)
 
     # `image`, `audio` and `link` are derived rather than copied, so they have
     # to go through the same filter as every other key. Checking the exclusions
@@ -453,17 +473,6 @@ def generate_sensor_entry(  # noqa: C901, PLR0912
         and (processed_link := _resolve_url(process_link(feed_entry), config))
     ):
         sensor_entry["link"] = processed_link
-    # `links[].href` is rendered like `link`, so a relative one has to point at
-    # the feed's host too and not at Home Assistant.
-    if isinstance(links := sensor_entry.get("links"), list):
-        sensor_entry["links"] = [
-            (
-                {**item, "href": _resolve_url(item["href"], config)}
-                if isinstance(item, dict) and isinstance(item.get("href"), str)
-                else item
-            )
-            for item in links
-        ]
     # Before `remove_summary_image` and the truncation, so both work on the
     # markup the sensor actually exposes rather than on what the feed sent.
     sensor_entry = sanitize_mapping(sensor_entry, config.feed_url)
@@ -488,6 +497,7 @@ def generate_channel_info(
             _add_date(channel_info, key, value, config)
         elif isinstance(value, dict | list | str | int | float | bool):
             channel_info[key] = value
+    _resolve_links(channel_info, config)
 
     if not _is_filtered("image", config):
         image_url = feed_info.get("image", {}).get("href") or feed_info.get(
