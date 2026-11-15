@@ -438,7 +438,7 @@ def generate_sensor_entry(  # noqa: C901, PLR0912
     if (
         not _is_filtered("link", config)
         and "link" not in sensor_entry
-        and (processed_link := _resolve_url(process_link(feed_entry, config), config))
+        and (processed_link := _resolve_url(process_link(feed_entry), config))
     ):
         sensor_entry["link"] = processed_link
     # `links[].href` is rendered like `link`, so a relative one has to point at
@@ -668,14 +668,17 @@ def process_audio(
     return None
 
 
-def process_link(feed_entry: FeedParserDict, config: FeedParserConfig) -> str:
-    """Return the link for a feed entry."""
-    if "links" in feed_entry:
-        if len(feed_entry["links"]) > 1:
-            _LOGGER.debug(
-                "Feed %s: More than one link found for %s. Using the first link.",
-                config.name,
-                feed_entry,
-            )
-        return feed_entry["links"][0]["href"]
-    return ""
+def process_link(feed_entry: FeedParserDict) -> str:
+    """Return the first `alternate` link of a feed entry, or "".
+
+    feedparser leaves `href` out of a `links` item for `<link></link>`, and an
+    enclosure is a `links` item too, so neither may become the entry's link.
+    """
+    return next(
+        (
+            link["href"]
+            for link in feed_entry.get("links", [])
+            if link.get("href") and link.get("rel", "alternate") == "alternate"
+        ),
+        "",
+    )
